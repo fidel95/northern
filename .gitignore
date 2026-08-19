@@ -19,3 +19,7 @@ node_modules
 prototype-files-needed/
 Prototype files needed-handoff.zip
 northern-pines-website-build-prompt.md
+
+# Wrangler (Cloudflare Workers) local dev artifacts
+.wrangler/
+.dev.vars
