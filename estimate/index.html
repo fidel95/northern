@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instant Estimate — Windows &amp; Doors Pricing | Northern Pines Construction</title>
+<meta name="description" content="Build a room-by-room cart of windows, patio doors, and entry doors and see an installed price range for your central Indiana home in minutes.">
+<link rel="canonical" href="https://npconstructionservices.com/estimate/">
+<meta property="og:title" content="Instant Estimate | Northern Pines Construction">
+<meta property="og:description" content="Configure windows and doors, see an installed price range, and send the cart straight to a consultation request.">
+<meta property="og:image" content="https://npconstructionservices.com/assets/og-image.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../css/base.css">
+<link rel="stylesheet" href="../css/components.css">
+<link rel="stylesheet" href="../css/content.css">
+<link rel="stylesheet" href="../css/estimate.css">
+</head>
+<body>
+
+<div class="page-frame">
+<div class="frame-edge frame-edge--top" aria-hidden="true"></div>
+<div class="frame-edge frame-edge--bottom" aria-hidden="true"></div>
+<div class="frame-edge frame-edge--left" aria-hidden="true"></div>
+<div class="frame-edge frame-edge--right" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="site-header__bar">
+    <a href="/" class="site-header__logo">
+      <img src="../assets/logo-icon.png" alt="">
+      <span class="site-header__wordmark">Northern Pines<small>CONSTRUCTION &middot; IN</small></span>
+    </a>
+
+    <nav aria-label="Primary" class="site-header__nav">
+      <a href="/windows/">Windows</a>
+      <a href="/doors/">Doors</a>
+      <a href="/visualizer/">Visualizer</a>
+      <a href="/estimate/" aria-current="page">Estimate</a>
+      <a href="/gallery/">Works</a>
+      <a href="/reviews/">Reviews</a>
+      <a href="/about/">About</a>
+    </nav>
+
+    <div class="site-header__right">
+      <a href="tel:+18665550148" class="site-header__phone site-header__phone-wrap">(866) 555-0148</a>
+      <span class="site-header__cta-wrap"><a href="/contact/" class="btn btn--primary btn--md">Start a project</a></span>
+      <button type="button" class="site-header__burger" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+
+  <nav class="site-header__drawer" aria-label="Mobile">
+    <a href="/windows/">Windows</a>
+    <a href="/doors/">Doors</a>
+    <a href="/visualizer/">Home Visualizer</a>
+    <a href="/estimate/">Instant Estimate</a>
+    <a href="/process/">Our Process</a>
+    <a href="/gallery/">Selected Works</a>
+    <a href="/reviews/">Reviews</a>
+    <a href="/about/">About</a>
+    <a href="/contact/">Contact</a>
+    <a href="tel:+18665550148" class="site-header__drawer-phone">Call (866) 555-0148</a>
+  </nav>
+</header>
+
+<section class="page-hero page-hero--tight">
+  <div class="page-hero__rules" aria-hidden="true" data-px="0.1"></div>
+  <span class="page-hero__watermark" aria-hidden="true" data-px="0.2">Pricing</span>
+  <div class="page-hero__inner">
+    <span class="eyebrow">Tool 02 &middot; Instant Estimate</span>
+    <h1 style="max-width:760px">Price the project before<br><em>anyone</em> comes to the house.</h1>
+    <p class="lede" style="max-width:560px">Configure each opening, add it to the cart, and send the whole list to us. No account, no phone call to see a number.</p>
+  </div>
+</section>
+
+<div class="estimate-stage" data-estimate>
+  <div class="estimate-grid">
+
+    <div>
+      <div role="tablist" aria-label="Product type" class="est-tabs">
+        <button type="button" role="tab" class="est-tab" data-tab="windows" aria-selected="true">Windows</button>
+        <button type="button" role="tab" class="est-tab" data-tab="patio" aria-selected="false">Patio Doors</button>
+        <button type="button" role="tab" class="est-tab" data-tab="entry" aria-selected="false">Entry Doors</button>
+      </div>
+
+      <div class="est-groups"></div>
+
+      <div class="est-qty-row">
+        <div>
+          <span class="est-qty-label">How many</span>
+          <div class="est-qty-controls">
+            <button type="button" class="est-qty-btn est-qty-dec" aria-label="Decrease quantity">&minus;</button>
+            <span class="est-qty-num">1</span>
+            <button type="button" class="est-qty-btn est-qty-inc" aria-label="Increase quantity">+</button>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <span class="est-qty-label est-unit-label">Approx. per window, installed</span>
+          <span class="est-unit-price">$525</span>
+        </div>
+      </div>
+
+      <button type="button" class="est-add-btn">Add 1 window to estimate</button>
+      <p class="est-note">PRICING NOTE &mdash; figures are illustrative placeholders pending the real cost book. Replace <code>PRICING</code> in <a href="../js/estimate.js" style="color:var(--text-muted)">js/estimate.js</a> before launch.</p>
+    </div>
+
+    <aside class="est-cart">
+      <div class="est-cart__head">
+        <h2>Your project</h2>
+        <span class="est-cart__count">0 UNITS</span>
+      </div>
+      <div class="est-cart__body"></div>
+      <div class="est-cart__range" style="display:none">
+        <span class="est-cart__range-label">ESTIMATED RANGE, INSTALLED</span>
+        <span class="est-cart__range-value">$0</span>
+        <p class="est-cart__range-note"></p>
+        <a href="#request" class="btn-lg btn-lg--solid">Send This to a Designer</a>
+        <a href="/visualizer/" class="btn-md btn-md--ghost">See It On Your Home</a>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div id="request" class="section--inset section--bordered" style="scroll-margin-top:90px">
+  <div class="cta-split__inner" style="max-width:1240px;margin:0 auto;padding:clamp(56px,7vw,96px) clamp(20px,4vw,32px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:clamp(32px,4vw,64px);align-items:start">
+    <div>
+      <span class="eyebrow">Step two</span>
+      <h2 style="margin-top:18px">Turn the range into a real number.</h2>
+      <p>Your cart is already written into the message below. A designer confirms measurements on site, and that visit is what turns the range into fixed, itemized pricing.</p>
+      <div class="cta-split__list">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="#5F625C" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>We call within one business day</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="#5F625C" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>Consultations run about 45 minutes</div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="#5F625C" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg>Financing reviewed during the visit</div>
+      </div>
+    </div>
+    <form class="lead-form" action="https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00Dhm00000374Vz" method="POST">
+      <input type="hidden" name="captcha_settings" value="{&quot;keyname&quot;:&quot;npcsv2&quot;,&quot;fallback&quot;:&quot;true&quot;,&quot;orgId&quot;:&quot;00Dhm00000374Vz&quot;,&quot;ts&quot;:&quot;&quot;}">
+      <input type="hidden" name="oid" value="00Dhm00000374Vz">
+      <input type="hidden" name="retURL" value="https://npconstructionservices.com/">
+      <input type="hidden" id="lead_source" name="lead_source" value="Web">
+
+      <div>
+        <h3>Send my estimate</h3>
+        <p class="lead-form__blurb">Your configured cart is attached to the message below — edit it if you'd like to add context.</p>
+      </div>
+
+      <div class="lead-form__row">
+        <div>
+          <label for="first_name-estimate">First name</label>
+          <input id="first_name-estimate" maxlength="40" name="first_name" type="text" required>
+        </div>
+        <div>
+          <label for="last_name-estimate">Last name</label>
+          <input id="last_name-estimate" maxlength="80" name="last_name" type="text" required>
+        </div>
+      </div>
+
+      <div class="lead-form__row">
+        <div>
+          <label for="email-estimate">Email</label>
+          <input id="email-estimate" maxlength="80" name="email" type="text" required>
+        </div>
+        <div>
+          <label for="phone-estimate">Phone</label>
+          <input id="phone-estimate" maxlength="40" name="phone" type="text">
+        </div>
+      </div>
+
+      <div>
+        <label for="city-estimate">City</label>
+        <input id="city-estimate" maxlength="40" name="city" type="text" placeholder="Carmel, Fishers, Greenwood&hellip;">
+      </div>
+
+      <div>
+        <label for="description-estimate">What are you looking to replace?</label>
+        <textarea id="description-estimate" name="description">Estimate page inquiry — no cart configured yet.</textarea>
+      </div>
+
+      <div class="g-recaptcha" data-sitekey="6Lc6W4MtAAAAAOXH8FmI0wf0kBmJLyMaUD8wRpSD" data-theme="dark" style="transform:scale(0.94);transform-origin:0 0;margin-bottom:-6px"></div>
+
+      <button type="submit" name="submit" class="lead-form__submit">Send My Estimate</button>
+      <span class="lead-form__fineprint">No obligation &middot; We reply within one business day</span>
+    </form>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="site-footer__inner">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <a href="/"><img src="../assets/logo-full.png" alt="Northern Pines Construction"></a>
+        <p>Custom-built replacement windows and doors &mdash; measured, manufactured, and installed by one company across central Indiana.</p>
+        <div class="site-footer__contact">
+          <span>Indianapolis, IN</span>
+          <a href="tel:+18665550148">(866) 555-0148</a>
+          <span>Mon&ndash;Fri 8&ndash;6 &middot; Sat 9&ndash;2</span>
+        </div>
+      </div>
+
+      <div>
+        <h5>Products</h5>
+        <div class="site-footer__links">
+          <a href="/windows/">Windows</a>
+          <a href="/doors/#patio">Patio Doors</a>
+          <a href="/doors/#entry">Entry Doors</a>
+          <a href="/windows/#bay-bow">Bay &amp; Bow</a>
+        </div>
+      </div>
+
+      <div>
+        <h5>Tools</h5>
+        <div class="site-footer__links">
+          <a href="/visualizer/">Home Visualizer</a>
+          <a href="/estimate/">Instant Estimate</a>
+          <a href="/gallery/">Selected Works</a>
+        </div>
+      </div>
+
+      <div>
+        <h5>Company</h5>
+        <div class="site-footer__links">
+          <a href="/process/">Our Process</a>
+          <a href="/reviews/">Reviews</a>
+          <a href="/about/">About</a>
+          <a href="/contact/">Contact</a>
+        </div>
+      </div>
+
+      <div class="site-footer__signup">
+        <h5>Maintenance notes</h5>
+        <form>
+          <label for="footer-email">Seasonal maintenance notes and rebate deadlines. No more than monthly.</label>
+          <input id="footer-email" type="email" placeholder="Email address">
+          <button type="submit" class="btn btn--outline btn--md btn--full site-footer__signup-submit">Subscribe</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <span>&copy; 2026 Northern Pines Construction &middot; Licensed &amp; insured in Indiana</span>
+      <div class="site-footer__bottom-links">
+        <a href="/terms/">Terms</a>
+        <a href="/privacy-policy/">Privacy</a>
+        <a href="/contact/">Accessibility</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<div class="mobile-cta">
+  <a href="tel:+18665550148" class="mobile-cta__call">Call now</a>
+  <a href="/estimate/" class="mobile-cta__estimate">Get estimate</a>
+</div>
+<div style="height:56px"></div>
+</div>
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script src="../js/leadform.js"></script>
+<script src="../js/site.js"></script>
+<script src="../js/motion.js" defer></script>
+<script src="../js/estimate.js" defer></script>
+</body>
+</html>

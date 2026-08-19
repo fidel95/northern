@@ -1,0 +1,12 @@
+:root{
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:24px;
+  --space-6:32px; --space-7:48px; --space-8:64px; --space-9:96px; --space-10:128px;
+  --gutter-page:30px;      /* olive frame inset around the whole page */
+  --gutter-section:72px;   /* vertical rhythm between sections */
+  --grid-columns:12;       /* @kind other */
+  --grid-gap:24px;
+  --content-max:1180px;    /* @kind spacing */
+  --control-h-sm:28px;     /* @kind spacing */
+  --control-h-md:36px;     /* @kind spacing */
+  --control-h-lg:48px;     /* @kind spacing */
+}

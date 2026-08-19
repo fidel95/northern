@@ -1,0 +1,8 @@
+# Northern Pines Construction
+User-agent: *
+Allow: /
+
+# No admin or internal tooling paths exist yet. Add Disallow rules here
+# if a CMS, staging path, or internal estimator admin is introduced.
+
+Sitemap: https://npconstructionservices.com/sitemap.xml

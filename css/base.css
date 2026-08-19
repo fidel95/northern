@@ -1,0 +1,46 @@
+@import url("tokens/fonts.css");
+@import url("tokens/colors.css");
+@import url("tokens/typography.css");
+@import url("tokens/spacing.css");
+@import url("tokens/borders.css");
+@import url("tokens/elevation.css");
+@import url("tokens/motion.css");
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--surface-page);
+  color: var(--text-body);
+  font-family: var(--font-text);
+  font-size: var(--size-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--text-accent); }
+a:hover { color: var(--acid-200); }
+img, svg { display: block; max-width: 100%; }
+h1, h2, h3, h4, h5, dl, dd, p { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+/* Fixed olive frame around every page, matching the design system's "boxed" layout */
+.page-frame {
+  background: var(--surface-page);
+  color: var(--text-body);
+  font-family: var(--font-text);
+  padding: min(30px, 3vw);
+  overflow-x: clip;
+}
+.frame-edge {
+  position: fixed;
+  background: var(--surface-frame);
+  z-index: 400;
+  pointer-events: none;
+}
+.frame-edge--top { top: 0; left: 0; right: 0; height: min(30px, 3vw); }
+.frame-edge--bottom { bottom: 0; left: 0; right: 0; height: min(30px, 3vw); }
+.frame-edge--left { top: 0; bottom: 0; left: 0; width: min(30px, 3vw); }
+.frame-edge--right { top: 0; bottom: 0; right: 0; width: min(30px, 3vw); }

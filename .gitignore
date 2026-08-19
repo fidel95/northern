@@ -11,3 +11,11 @@
 
 #!.yarn/cache
 .pnp.*
+node_modules
+
+# Claude Design handoff source material — not part of the deployed site
+.DS_Store
+.claude/
+prototype-files-needed/
+Prototype files needed-handoff.zip
+northern-pines-website-build-prompt.md

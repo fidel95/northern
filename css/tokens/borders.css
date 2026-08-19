@@ -1,0 +1,6 @@
+:root{
+  --radius-none:0px; --radius-xs:2px; --radius-sm:4px; --radius-md:6px; --radius-pill:999px;
+  --border-hairline:1px;   /* @kind other */
+  --border-strong:2px;     /* @kind other */
+  --border-dashed:1px dashed var(--line-guide);   /* @kind other */
+}
