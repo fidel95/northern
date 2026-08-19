@@ -1,0 +1,41 @@
+:root{
+  /* base — acid */
+  --acid-100:#f7fa9a; --acid-200:#f0f65c; --acid-300:#e9ee1b; --acid-400:#c9ce00; --acid-500:#8f9300; --acid-600:#5d5807; --acid-700:#3a3705; --acid-800:#201e09;
+  /* base — ink (site is dark-first) */
+  --ink-000:#000000; --ink-050:#090909; --ink-100:#111113; --ink-150:#161618; --ink-200:#1c1c1e; --ink-300:#242427; --ink-400:#33333a; --ink-500:#55555d; --ink-600:#7d7d84; --ink-700:#a8a8ad; --ink-800:#d4d4d2; --ink-900:#eaeae8;
+  /* base — utility */
+  --olive-mid:#807836; --rust-300:#e06b2b; --steel-300:#5f9ea8; --danger-300:#e2453a; --success-300:#7ac943;
+
+  /* semantic — surfaces */
+  --surface-page:var(--ink-100);
+  --surface-frame:var(--acid-600);
+  --surface-card:var(--ink-150);
+  --surface-raised:var(--ink-200);
+  --surface-inset:var(--ink-050);
+  --surface-accent:var(--acid-300);
+  --surface-accent-muted:var(--acid-800);
+  --surface-overlay:rgba(9,9,9,.82);
+
+  /* semantic — text */
+  --text-strong:var(--ink-900);
+  --text-body:var(--ink-800);
+  --text-muted:var(--ink-600);
+  --text-faint:var(--ink-500);
+  --text-accent:var(--acid-300);
+  --text-on-accent:var(--ink-050);
+
+  /* semantic — lines */
+  --line-hairline:rgba(234,234,232,.10);
+  --line-strong:rgba(234,234,232,.22);
+  --line-accent:var(--acid-600);
+  --line-guide:rgba(234,234,232,.06);
+
+  /* semantic — state */
+  --state-hover-accent:var(--acid-200);
+  --state-press-accent:var(--acid-400);
+  --state-focus-ring:var(--acid-300);
+  --state-disabled-fg:var(--ink-500);
+  --state-disabled-bg:var(--ink-300);
+  --state-danger:var(--danger-300);
+  --state-success:var(--success-300);
+}

@@ -1,0 +1,6 @@
+/* Ironline webfonts — loaded from Google Fonts.
+   SUBSTITUTION NOTE: no font binaries were supplied with the source material.
+   Archivo (wide/heavy), Space Grotesk and Space Mono are the closest Google Fonts
+   matches to the reference artwork. Swap the @import below for local @font-face
+   rules when the real licensed files arrive. */
+@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100..125,100..900&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap");

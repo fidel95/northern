@@ -1,0 +1,30 @@
+:root{
+  --font-display:"Archivo","Arial Black",system-ui,sans-serif;
+  --font-text:"Space Grotesk",system-ui,sans-serif;
+  --font-label:"Space Mono",ui-monospace,monospace;
+
+  /* font-stretch for headline type */
+  --display-stretch:118%;      /* @kind other */
+  --weight-black:800;          /* @kind other */
+  --weight-bold:700;           /* @kind other */
+  --weight-medium:500;         /* @kind other */
+  --weight-regular:400;        /* @kind other */
+
+  /* type scale — display (uppercase, tight) */
+  --size-hero:112px;   --lh-hero:.86;        /* @kind other */
+  --size-d1:72px;      --lh-d1:.88;          /* @kind other */
+  --size-d2:48px;      --lh-d2:.92;          /* @kind other */
+  --size-d3:32px;      --lh-d3:1.0;          /* @kind other */
+  /* type scale — text */
+  --size-body-lg:18px; --lh-body-lg:1.5;     /* @kind other */
+  --size-body:15px;    --lh-body:1.55;       /* @kind other */
+  --size-body-sm:13px; --lh-body-sm:1.5;     /* @kind other */
+  /* type scale — label (mono, uppercase, tracked) */
+  --size-label:11px;   --lh-label:1.1;       /* @kind other */
+  --track-label:.14em;                       /* @kind other */
+  --size-label-sm:9px; --lh-label-sm:1.1;    /* @kind other */
+  --track-label-sm:.18em;                    /* @kind other */
+
+  --track-display:-.02em;                    /* @kind other */
+  --track-body:0em;                          /* @kind other */
+}

@@ -1,0 +1,10 @@
+:root{
+  --shadow-none:none;
+  --shadow-card:0 1px 0 rgba(234,234,232,.05) inset;
+  --shadow-raised:0 12px 32px rgba(0,0,0,.55);
+  --shadow-accent:0 0 0 1px var(--acid-600), 0 8px 24px rgba(233,238,27,.10);
+  --glow-accent:0 0 24px rgba(233,238,27,.28);   /* @kind shadow */
+  --scrim-bottom:linear-gradient(to top, rgba(9,9,9,.92) 0%, rgba(9,9,9,.55) 45%, rgba(9,9,9,0) 100%);  /* @kind other */
+  --scrim-left:linear-gradient(to right, rgba(9,9,9,.88) 0%, rgba(9,9,9,0) 60%);   /* @kind other */
+  --blur-panel:blur(14px);   /* @kind other */
+}

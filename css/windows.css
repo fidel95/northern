@@ -1,0 +1,17 @@
+/* Windows page reuses doors.css's .product-section / .door-card / .finishes / .faq
+   patterns (structurally identical), plus this small addition for the sticky
+   sub-nav unique to this page. */
+.quicknav {
+  border-bottom: 1px solid var(--line-hairline);
+  background: var(--surface-card);
+  position: sticky;
+  top: calc(min(30px, 3vw) + 64px);
+  z-index: 50;
+}
+.quicknav__inner {
+  max-width: 1240px; margin: 0 auto; padding: 14px clamp(20px, 4vw, 32px);
+  display: flex; gap: 22px; flex-wrap: wrap;
+  font-family: var(--font-label); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.quicknav a { color: var(--text-muted); text-decoration: none; }
+.quicknav a:hover { color: var(--text-accent); }

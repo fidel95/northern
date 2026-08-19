@@ -1,0 +1,45 @@
+.estimate-stage { max-width: 1240px; margin: 0 auto; padding: clamp(40px, 5vw, 64px) clamp(20px, 4vw, 32px); }
+.estimate-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: clamp(28px, 3vw, 44px); align-items: start; }
+
+.est-tabs { display: flex; gap: 1px; background: var(--line-hairline); border: 1px solid var(--line-hairline); margin-bottom: 28px; flex-wrap: wrap; }
+.est-tab { flex: 1 1 140px; min-height: 54px; border: none; cursor: pointer; font-family: var(--font-label); font-size: 12.5px; letter-spacing: 0.1em; text-transform: uppercase; background: transparent; color: var(--text-muted); }
+.est-tab[aria-selected="true"] { background: var(--surface-accent); color: var(--text-on-accent); }
+
+.est-group { margin: 0 0 30px; }
+.est-group legend { font-family: var(--font-label); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); padding: 0; margin-bottom: 14px; }
+.est-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+.est-opt { border: 1px solid var(--line-strong); background: transparent; color: var(--text-body); padding: 13px 14px; border-radius: 2px; cursor: pointer; min-height: 58px; text-align: left; font-family: var(--font-text); display: flex; flex-direction: column; justify-content: center; }
+.est-opt[aria-pressed="true"] { border-color: var(--acid-300); box-shadow: inset 0 0 0 1px var(--acid-300); background: var(--surface-accent-muted); color: var(--text-strong); }
+.est-opt__name { display: flex; align-items: center; gap: 9px; font-size: 14.5px; font-weight: 500; color: var(--text-strong); text-align: left; }
+.est-opt__swatch { width: 16px; height: 16px; border: 1px solid var(--line-strong); flex: none; display: inline-block; }
+.est-opt__price { font-family: var(--font-label); font-size: 11.5px; color: var(--text-muted); margin-top: 5px; display: block; text-align: left; }
+
+.est-qty-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding: 20px 0; border-top: 1px solid var(--line-hairline); border-bottom: 1px solid var(--line-hairline); }
+.est-qty-label { font-family: var(--font-label); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 6px; }
+.est-qty-controls { display: flex; align-items: center; gap: 12px; }
+.est-qty-btn { width: 44px; height: 44px; border: 1px solid var(--line-strong); background: var(--surface-card); font-size: 20px; line-height: 1; color: var(--text-strong); cursor: pointer; border-radius: var(--radius-xs); }
+.est-qty-num { font-family: var(--font-display); font-weight: 800; font-stretch: 118%; text-transform: uppercase; letter-spacing: -0.02em; font-size: 24px; min-width: 32px; text-align: center; }
+.est-unit-price { font-family: var(--font-display); font-weight: 800; font-stretch: 118%; text-transform: uppercase; letter-spacing: -0.02em; font-size: 26px; color: var(--text-strong); }
+
+.est-add-btn { margin-top: 22px; width: 100%; justify-content: center; display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); font-size: var(--size-label); padding: 17px 26px; border: none; border-radius: var(--radius-xs); background: var(--surface-inset); color: var(--text-strong); cursor: pointer; }
+.est-add-btn:hover { background: var(--state-press-accent); }
+.est-note { font-family: var(--font-label); font-size: 11.5px; color: var(--text-muted); margin: 14px 0 0; line-height: 1.7; }
+
+.est-cart { border: 1px solid var(--line-hairline); background: var(--surface-inset); position: sticky; top: 96px; }
+.est-cart__head { padding: 26px 26px 20px; border-bottom: 1px solid var(--line-hairline); display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.est-cart__head h2 { font-family: var(--font-display); font-weight: 800; font-stretch: 118%; text-transform: uppercase; letter-spacing: -0.02em; font-size: 22px; margin: 0; color: var(--text-strong); line-height: .94; }
+.est-cart__count { font-family: var(--font-label); font-size: 12px; color: var(--text-muted); }
+.est-cart__body { padding: 8px 26px; }
+.est-cart__empty { font-size: 14.5px; color: var(--text-muted); padding: 24px 0; margin: 0; text-wrap: pretty; }
+.est-cart__item { display: flex; gap: 14px; justify-content: space-between; align-items: flex-start; padding: 18px 0; border-bottom: 1px solid rgba(20, 20, 20, 0.1); }
+.est-cart__item-title { font-size: var(--size-label); font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); color: var(--text-strong); display: block; }
+.est-cart__item-meta { font-family: var(--font-label); font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 4px; line-height: 1.6; }
+.est-cart__item-right { text-align: right; flex: none; }
+.est-cart__item-sub { font-size: 14.5px; color: var(--text-strong); display: block; }
+.est-cart__remove { font-family: var(--font-label); font-size: 11px; letter-spacing: 0.06em; color: var(--text-muted); background: none; border: none; padding: 6px 0 0; cursor: pointer; text-decoration: underline; }
+.est-cart__range { padding: 22px 26px 26px; background: var(--surface-inset); color: var(--text-strong); }
+.est-cart__range-label { font-family: var(--font-label); font-size: 11.5px; letter-spacing: 0.12em; color: var(--text-muted); display: block; margin-bottom: 8px; }
+.est-cart__range-value { font-family: var(--font-display); font-weight: 800; font-stretch: 118%; text-transform: uppercase; letter-spacing: -0.02em; font-size: clamp(26px, 3vw, 34px); color: var(--text-strong); display: block; line-height: .94; }
+.est-cart__range-note { font-size: 13px; color: var(--text-muted); margin: 12px 0 0; line-height: 1.6; }
+.est-cart__range a.btn-lg { width: 100%; justify-content: center; margin-top: 18px; }
+.est-cart__range a.btn-md { width: 100%; justify-content: center; margin-top: 10px; }
