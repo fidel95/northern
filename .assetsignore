@@ -1,0 +1,17 @@
+# Excludes files from the Cloudflare Workers static-assets bundle.
+# assets.directory is "." (repo root) in wrangler.jsonc, so this keeps
+# build-time artifacts and non-site files out of the deployed bundle.
+node_modules
+.wrangler
+.git
+.github
+wrangler.jsonc
+package.json
+package-lock.json
+yarn.lock
+bun.lock
+bun.lockb
+.gitignore
+.gitattributes
+.editorconfig
+README.md
