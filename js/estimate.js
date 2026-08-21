@@ -230,7 +230,7 @@
     if (state.cart.length) {
       els.rangeBlock.style.display = '';
       els.rangeText.textContent = money(low) + ' – ' + money(high);
-      els.rangeNote.textContent = 'Includes tear-out, installation, disposal, and the 30-year glass and frame warranty. Final pricing follows the on-site measure.';
+      els.rangeNote.textContent = 'Includes tear-out, installation, disposal, and the lifetime glass and frame warranty. Final pricing follows the on-site measure.';
     } else {
       els.rangeBlock.style.display = 'none';
     }
