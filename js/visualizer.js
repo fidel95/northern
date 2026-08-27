@@ -71,13 +71,15 @@
     return { x: lerp(lerp(p[0].x, p[1].x, u), lerp(p[3].x, p[2].x, u), v), y: lerp(lerp(p[0].y, p[1].y, u), lerp(p[3].y, p[2].y, u), v) };
   };
   var byId = function (list, id) { return list.filter(function (x) { return x.id === id; })[0] || list[0]; };
+  var paletteFor = function (kind) { return kind === 'siding' ? SIDING : kind === 'roof' ? ROOFS : TRIMS; };
 
   var state = {
     mode: 'demo', homeIdx: 0, sheetOpen: false,
     selected: 'windows',
     siding: 'sandstone', trim: 'white', roof: 'charcoal', doorColor: 'black',
     wstyle: 'doublehung', frame: 'white', grille: 'none', glass: 'standard', dstyle: 'single',
-    userWindows: [], tracing: [], status: 'Tap a part of the house, or use the list on the right.'
+    userWindows: [], userZones: { siding: null, trim: null, roof: null }, tracing: [],
+    status: 'Tap a part of the house, or use the list on the right.'
   };
   var img = null;
 
@@ -450,6 +452,51 @@
     }
   }
 
+  function pathFromPoints(pts) {
+    var p = new Path2D();
+    pts.forEach(function (pt, i) { i ? p.lineTo(pt.x, pt.y) : p.moveTo(pt.x, pt.y); });
+    p.closePath();
+    return p;
+  }
+
+  function hexToHsl(hex) {
+    var r = parseInt(hex.slice(1, 3), 16) / 255;
+    var g = parseInt(hex.slice(3, 5), 16) / 255;
+    var b = parseInt(hex.slice(5, 7), 16) / 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    return { l: (max + min) / 2 };
+  }
+
+  // Recolors a traced zone on a real photo by shifting hue/saturation ('color'
+  // blend) rather than overwriting pixels, so the photo's own shading, shadows
+  // and reflections stay visible underneath the new color. A flat fill would
+  // erase that texture and look pasted on. 'color' blend alone can't reach
+  // near-white/near-black (those have no defined hue/sat), so an extra
+  // multiply (darken) or screen (lighten) pass nudges luminance toward the
+  // swatch's own lightness first.
+  function recolorZone(path, color) {
+    ctx.save();
+    ctx.clip(path);
+    ctx.globalCompositeOperation = 'color';
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+
+    var delta = hexToHsl(color).l - 0.5;
+    if (delta < -0.05) {
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.fillStyle = 'rgba(0,0,0,' + Math.min(0.75, -delta * 1.3).toFixed(2) + ')';
+      ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+    } else if (delta > 0.05) {
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.75, delta * 1.3).toFixed(2) + ')';
+      ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+    }
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    ctx.fillRect(0, 0, LOGICAL_W, LOGICAL_H);
+    ctx.restore();
+  }
+
   function drawUpload(W, H) {
     if (!img) {
       ctx.fillStyle = '#1c1c1e'; ctx.fillRect(0, 0, W, H);
@@ -466,6 +513,10 @@
     var dw = img.width * scale, dh = img.height * scale;
     ctx.fillStyle = '#090909'; ctx.fillRect(0, 0, W, H);
     ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    ['roof', 'siding', 'trim'].forEach(function (kind) {
+      var zone = state.userZones[kind];
+      if (zone) recolorZone(pathFromPoints(zone.points), byId(paletteFor(kind), state[kind]).c);
+    });
     state.userWindows.forEach(function (w) { drawWarped(w); });
     var t = state.tracing;
     if (t.length) {
@@ -524,11 +575,21 @@
     var pt = canvasPoint(e), x = pt.x, y = pt.y;
     if (state.mode === 'upload') {
       if (!img) return;
+      if (state.selected === 'door') {
+        state.status = "Door tracing on your own photo isn't supported yet — try Windows, Siding, Roof, or Trim.";
+        renderAll();
+        return;
+      }
       var t = state.tracing.concat([{ x: x, y: y }]);
       if (t.length === 4) {
-        state.userWindows.push({ points: t, style: state.wstyle, frame: state.frame, grille: state.grille, glass: state.glass });
+        if (state.selected === 'windows') {
+          state.userWindows.push({ points: t, style: state.wstyle, frame: state.frame, grille: state.grille, glass: state.glass });
+          state.status = 'Opening added. Change the style on the right, or trace another opening.';
+        } else {
+          state.userZones[state.selected] = { points: t };
+          state.status = labelFor(state.selected) + ' area marked. Pick a color on the right.';
+        }
         state.tracing = [];
-        state.status = 'Opening added. Change the style on the right, or trace another opening.';
       } else {
         state.tracing = t;
         state.status = 'Corner ' + t.length + ' of 4 marked. Go clockwise from the top-left.';
@@ -669,7 +730,7 @@
 
   /* ---------- wire up static controls ---------- */
   els.demoTab.addEventListener('click', function () { state.mode = 'demo'; state.status = 'Tap a part of the house, or use the list on the right.'; renderAll(); });
-  els.uploadTab.addEventListener('click', function () { state.mode = 'upload'; state.status = img ? 'Tap four corners of an opening.' : 'Choose a photo to begin.'; renderAll(); });
+  els.uploadTab.addEventListener('click', function () { state.mode = 'upload'; state.status = img ? 'Pick a zone on the right, then tap its four corners.' : 'Choose a photo to begin.'; renderAll(); });
 
   HOMES.forEach(function (h, i) {
     var btn = document.createElement('button');
@@ -683,7 +744,13 @@
     var btn = document.createElement('button');
     btn.type = 'button'; btn.className = 'viz-zone-btn'; btn.setAttribute('data-zone', id);
     btn.textContent = labelFor(id);
-    btn.addEventListener('click', function () { state.selected = id; state.status = labelFor(id) + ' selected.'; renderAll(); });
+    btn.addEventListener('click', function () {
+      state.selected = id;
+      state.status = state.mode === 'upload' && img && id !== 'door'
+        ? 'Tap the four corners of the ' + labelFor(id).toLowerCase() + ' area.'
+        : labelFor(id) + ' selected.';
+      renderAll();
+    });
     els.zoneGrid.appendChild(btn);
   });
 
@@ -695,7 +762,7 @@
     Object.assign(state, {
       siding: 'sandstone', trim: 'white', roof: 'charcoal', doorColor: 'black',
       wstyle: 'doublehung', frame: 'white', grille: 'none', glass: 'standard', dstyle: 'single',
-      userWindows: [], tracing: [], status: 'Reset to the base home.'
+      userWindows: [], userZones: { siding: null, trim: null, roof: null }, tracing: [], status: 'Reset to the base home.'
     });
     renderAll();
   });
@@ -714,15 +781,23 @@
     var image = new Image();
     image.onload = function () {
       img = image;
-      state.userWindows = []; state.tracing = []; state.status = 'Photo loaded. Tap the four corners of one opening.';
+      state.userWindows = []; state.userZones = { siding: null, trim: null, roof: null }; state.tracing = [];
+      state.status = 'Photo loaded. Pick a zone on the right, then tap its four corners.';
       renderAll();
     };
     image.src = URL.createObjectURL(f);
   });
   els.undoBtn.addEventListener('click', function () {
     state.tracing = [];
-    state.userWindows = state.userWindows.slice(0, -1);
-    state.status = 'Last opening removed.';
+    if (state.selected === 'windows') {
+      state.userWindows = state.userWindows.slice(0, -1);
+      state.status = 'Last opening removed.';
+    } else if (state.userZones[state.selected]) {
+      state.userZones[state.selected] = null;
+      state.status = labelFor(state.selected) + ' area removed.';
+    } else {
+      state.status = 'Nothing to undo for this zone.';
+    }
     renderAll();
   });
 
