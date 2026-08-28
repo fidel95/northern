@@ -91,6 +91,7 @@
   canvas.height = LOGICAL_H * DPR;
   ctx.scale(DPR, DPR);
   var groundTex = buildGroundTexture();
+  var grainTex = buildGrainTexture();
   var els = {
     grid: root.querySelector('.viz-grid'),
     demoTab: root.querySelector('.viz-modetab[data-mode="demo"]'),
@@ -143,6 +144,62 @@
     return c;
   }
 
+  // A faint per-pixel noise layer, drawn over the finished scene with a
+  // 'overlay' blend, so the flat vector fills read as photographed rather
+  // than printed. Built once and reused — full-frame per-pixel noise is too
+  // slow to regenerate every redraw.
+  function buildGrainTexture() {
+    var c = document.createElement('canvas');
+    c.width = LOGICAL_W; c.height = LOGICAL_H;
+    var g = c.getContext('2d');
+    var id = g.createImageData(LOGICAL_W, LOGICAL_H);
+    for (var i = 0; i < id.data.length; i += 4) {
+      var v = 128 + (Math.random() * 40 - 20);
+      id.data[i] = id.data[i + 1] = id.data[i + 2] = v;
+      id.data[i + 3] = 255;
+    }
+    g.putImageData(id, 0, 0);
+    return c;
+  }
+
+  function drawShrub(cx, groundY, r, tone) {
+    ctx.fillStyle = tone;
+    [[-r * 0.55, 0.55], [0, 0.4], [r * 0.55, 0.55], [-r * 0.22, 0.75], [r * 0.22, 0.75]].forEach(function (o) {
+      ctx.beginPath();
+      ctx.ellipse(cx + o[0], groundY - r * o[1], r * 0.62, r * 0.62, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function drawLandscaping(home, groundY) {
+    var b = home.body;
+    // walkway from the door threshold straight down to the bottom edge, widening for perspective
+    var d = home.door;
+    var wx = d.x + d.w / 2;
+    ctx.fillStyle = 'rgba(178,174,163,0.9)';
+    ctx.beginPath();
+    ctx.moveTo(wx - 34, groundY);
+    ctx.lineTo(wx + 34, groundY);
+    ctx.lineTo(wx + 70, LOGICAL_H - 4);
+    ctx.lineTo(wx - 70, LOGICAL_H - 4);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
+    for (var seg = 1; seg < 5; seg++) {
+      var t = seg / 5;
+      var yy = groundY + (LOGICAL_H - 4 - groundY) * t;
+      var half = 34 + (70 - 34) * t;
+      ctx.beginPath(); ctx.moveTo(wx - half, yy); ctx.lineTo(wx + half, yy); ctx.stroke();
+    }
+
+    // foundation shrubs, spaced along the base of the house, skipping the doorway
+    var count = Math.max(2, Math.round(b.w / 170));
+    for (var i = 0; i < count; i++) {
+      var x = b.x + (b.w / (count - 1 || 1)) * i;
+      if (Math.abs(x - (d.x + d.w / 2)) < d.w * 0.9) continue;
+      drawShrub(x, groundY, 22 + (i % 3) * 5, i % 2 ? 'rgba(61,79,58,0.88)' : 'rgba(74,94,66,0.88)');
+    }
+  }
+
   function drawDemo(W, H) {
     var home = HOMES[state.homeIdx];
     var sid = byId(SIDING, state.siding).c;
@@ -159,6 +216,7 @@
     ctx.fillStyle = sun; ctx.fillRect(0, 0, W, groundY);
 
     ctx.drawImage(groundTex, 0, groundY, W, H - groundY);
+    drawLandscaping(home, groundY);
 
     ctx.fillStyle = 'rgba(60,66,62,0.5)';
     [70, 132, 838, 900].forEach(function (x, i) {
@@ -227,6 +285,12 @@
     var vignette = ctx.createRadialGradient(W / 2, H * 0.42, H * 0.25, W / 2, H * 0.42, H * 0.75);
     vignette.addColorStop(0, 'rgba(0,0,0,0)'); vignette.addColorStop(1, 'rgba(0,0,0,0.10)');
     ctx.fillStyle = vignette; ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.drawImage(grainTex, 0, 0, W, H);
+    ctx.restore();
 
     var sel = selectionRect(home);
     if (sel) {
@@ -660,11 +724,18 @@
 
   function estimateHref() {
     var isDoor = state.selected === 'door';
+    var note = 'From the ' + HOMES[state.homeIdx].name + ' visualizer — siding ' +
+      byId(SIDING, state.siding).n + ', trim ' + byId(TRIMS, state.trim).n + ', roof ' + byId(ROOFS, state.roof).n + '.';
+    var params;
     if (isDoor) {
-      var tab = ['sliding', 'french', 'multislide'].indexOf(state.dstyle) > -1 ? 'patio' : 'entry';
-      return '/estimate/?tab=' + tab + '&style=' + state.dstyle;
+      var isPatio = ['sliding', 'french', 'multislide'].indexOf(state.dstyle) > -1;
+      var tab = isPatio ? 'patio' : 'entry';
+      params = { tab: tab, style: state.dstyle, note: note };
+      if (isPatio) { params.color = state.frame; params.glass = state.glass; }
+    } else {
+      params = { tab: 'windows', style: state.wstyle, color: state.frame, glass: state.glass, grille: state.grille, note: note };
     }
-    return '/estimate/?tab=windows&style=' + state.wstyle;
+    return '/estimate/?' + new URLSearchParams(params).toString();
   }
 
   function prefillText() {

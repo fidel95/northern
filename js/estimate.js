@@ -55,6 +55,7 @@
   };
 
   var RANGE_SPREAD = 12;
+  var initialNote = '';
   var money = function (n) { return '$' + Math.round(n).toLocaleString('en-US'); };
   var find = function (list, id) { return list.filter(function (x) { return x.id === id; })[0] || list[0]; };
 
@@ -240,9 +241,10 @@
         els.desc.value = 'INSTANT ESTIMATE CART\n' +
           state.cart.map(function (c) { return c.qty + '× ' + c.title + ' — ' + c.meta + ' — ' + money(c.subtotal); }).join('\n') +
           '\n\nEstimated installed range: ' + money(low) + ' – ' + money(high) +
-          '\n(' + itemCount + (itemCount === 1 ? ' unit' : ' units') + ' configured on the website.)';
+          '\n(' + itemCount + (itemCount === 1 ? ' unit' : ' units') + ' configured on the website.)' +
+          (initialNote ? '\n\n' + initialNote : '');
       } else {
-        els.desc.value = 'Estimate page inquiry — no cart configured yet.';
+        els.desc.value = initialNote || 'Estimate page inquiry — no cart configured yet.';
       }
     }
   }
@@ -261,11 +263,27 @@
   var params = new URLSearchParams(location.search);
   var tab = params.get('tab');
   var style = params.get('style');
+  var color = params.get('color');
+  var glass = params.get('glass');
+  var grille = params.get('grille');
+  initialNote = params.get('note') || '';
+
   if (tab === 'windows' || tab === 'patio' || tab === 'entry') state.tab = tab;
   if (style) {
     if (PRICING.windowStyles.some(function (s) { return s.id === style; })) { state.tab = 'windows'; state.win.style = style; }
     else if (PRICING.patioStyles.some(function (s) { return s.id === style; })) { state.tab = 'patio'; state.patio.style = style; }
     else if (PRICING.entryStyles.some(function (s) { return s.id === style; })) { state.tab = 'entry'; state.entry.style = style; }
+  }
+  if (color && PRICING.frameColors.some(function (c) { return c.id === color; })) {
+    if (state.tab === 'windows') state.win.color = color;
+    else if (state.tab === 'patio') state.patio.color = color;
+  }
+  if (glass && PRICING.glass.some(function (g) { return g.id === glass; })) {
+    if (state.tab === 'windows') state.win.glass = glass;
+    else if (state.tab === 'patio') state.patio.glass = glass;
+  }
+  if (grille && state.tab === 'windows' && PRICING.grilles.some(function (g) { return g.id === grille; })) {
+    state.win.grille = grille;
   }
 
   render();
