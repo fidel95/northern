@@ -20,6 +20,7 @@
 /* ---- 3D stage: canvas box, loading screen, HUD, fallback ---- */
 .viz3d-canvas-wrap { aspect-ratio: 16 / 10; overflow: hidden; }
 .viz3d-canvas-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.viz3d-canvas-wrap canvas[hidden] { display: none; }
 .viz3d-canvas { cursor: grab; touch-action: none; }
 .viz3d-canvas:active { cursor: grabbing; }
 .viz3d-photo-canvas { cursor: crosshair; touch-action: manipulation; }
