@@ -21,30 +21,36 @@ export const MAT = {
 // visualizer/models/ASSET-SPEC.md. All three currently share the temporary
 // placeholder — replace a single `model` path with an artist-delivered file
 // and that house upgrades with no other code changes.
+//
+// cameraDistance/cameraHeight are deliberately IDENTICAL across all three
+// right now: since they all point at the same placeholder geometry, giving
+// each a distinct, untested value (as if for real, differently-proportioned
+// houses that don't exist yet) risked framing the camera too close to — or
+// even grazing inside — the roof on whichever preset never got visually
+// checked. Re-tune these per house once each one has its own real model.
+const PLACEHOLDER_CAMERA = { cameraDistance: 13, cameraHeight: 3.4 };
+
 export const houseConfigurations = {
   ranch: {
     id: 'ranch',
     name: 'Ranch',
     description: 'Single-story, wide front elevation.',
     model: 'models/house-placeholder.glb',
-    cameraDistance: 13,
-    cameraHeight: 3.4,
+    ...PLACEHOLDER_CAMERA,
   },
   colonial: {
     id: 'colonial',
     name: 'Colonial',
     description: 'Two-story, symmetric window bays.',
     model: 'models/house-placeholder.glb',
-    cameraDistance: 14,
-    cameraHeight: 4.2,
+    ...PLACEHOLDER_CAMERA,
   },
   craftsman: {
     id: 'craftsman',
     name: 'Craftsman',
     description: 'Deep gables, wide front windows.',
     model: 'models/house-placeholder.glb',
-    cameraDistance: 13,
-    cameraHeight: 3.6,
+    ...PLACEHOLDER_CAMERA,
   },
 };
 

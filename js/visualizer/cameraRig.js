@@ -14,10 +14,10 @@ export function createCameraRig(canvas) {
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.enablePan = false;
-  controls.minDistance = 6;
+  controls.minDistance = 7.5;
   controls.maxDistance = 24;
   controls.minPolarAngle = THREE.MathUtils.degToRad(38);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(86);
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(82);
   controls.target.set(0, 1.5, 0);
 
   let defaultPos = new THREE.Vector3(6, 3.4, 13);
