@@ -14,10 +14,22 @@ export function createCameraRig(canvas) {
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.enablePan = false;
-  controls.minDistance = 7.5;
+  // Roof overhang extends further from the target than the walls do, so a
+  // simple spherical minDistance around the target can still let the camera
+  // graze right up against the eave/fascia at close range + a shallow
+  // (near-horizontal) angle — that combination produced an unusably close,
+  // grazing shot of the roof edge during testing. 10m + a shallower max
+  // polar angle keeps that combination out of reach.
+  controls.minDistance = 10;
   controls.maxDistance = 24;
-  controls.minPolarAngle = THREE.MathUtils.degToRad(38);
-  controls.maxPolarAngle = THREE.MathUtils.degToRad(82);
+  // minPolarAngle keeps the camera from tilting into a near-top-down view —
+  // the placeholder's roof is a handful of overlapping thin boxes that only
+  // reads correctly from a normal elevation-ish angle; steep-down angles
+  // expose the gaps between those pieces (visible seams, not a real house
+  // roof surface). 55° keeps every reachable angle looking like an actual
+  // photo angle a customer would take.
+  controls.minPolarAngle = THREE.MathUtils.degToRad(55);
+  controls.maxPolarAngle = THREE.MathUtils.degToRad(78);
   controls.target.set(0, 1.5, 0);
 
   let defaultPos = new THREE.Vector3(6, 3.4, 13);

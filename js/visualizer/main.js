@@ -17,6 +17,7 @@ import { createUI } from './ui.js';
 import { categoryForMaterialName } from './categories.js';
 import { captureSnapshot, downloadCanvas } from './screenshot.js';
 import { PhotoMode } from './photoMode.js';
+import { createDiagnosticsPanel, collectRendererInfo } from './diagnostics.js';
 
 function supportsWebGL() {
   try {
@@ -48,12 +49,17 @@ function init() {
   const hud = root.querySelector('[data-viz3d-hud]');
 
   const state = new VisualizerState();
+  const diagnostics = createDiagnosticsPanel(root.querySelector('[data-viz3d-canvaswrap]'));
+  diagnostics.log('init start');
 
   const renderer = createRenderer(canvas);
+  diagnostics.log(`renderer created\n${collectRendererInfo(renderer)}`);
   const scene = createScene();
   const rig = createCameraRig(canvas);
   createLighting(renderer, scene);
+  diagnostics.log('lighting created');
   scene.add(buildEnvironment());
+  diagnostics.log('environment (ground/driveway) added');
 
   fitRendererToContainer(renderer, rig.camera, canvasWrap);
   const resizeObserver = new ResizeObserver(() => fitRendererToContainer(renderer, rig.camera, canvasWrap));
@@ -98,7 +104,9 @@ function init() {
     hud.hidden = true;
     setLoading(0, 'Preparing your home…');
     try {
+      diagnostics.log(`loading house: ${cfg.model}`);
       const gltf = await loadHouse(cfg.model, renderer, (p) => { if (p != null) setLoading(p, 'Preparing your home…'); });
+      diagnostics.log('gltf load resolved');
 
       if (houseGroup) {
         scene.remove(houseGroup);
@@ -119,7 +127,9 @@ function init() {
       }
 
       materialController = new HouseMaterialController(houseGroup);
+      diagnostics.log(`material groups found: ${[...materialController.groups.keys()].join(', ')}`);
       materialController.apply(state.selections);
+      diagnostics.log('materials applied');
 
       raycastTargets = [];
       houseGroup.traverse((o) => { if (o.isMesh) raycastTargets.push(o); });
@@ -127,8 +137,10 @@ function init() {
       rig.setDefaultView(cfg.cameraDistance, cfg.cameraHeight);
       hud.hidden = false;
       hideLoading();
+      diagnostics.log(`ready — canvas ${canvas.width}x${canvas.height}, dpr ${window.devicePixelRatio}`);
     } catch (err) {
       console.error('[visualizer] house load failed:', err);
+      diagnostics.log(`house load failed: ${err && err.message ? err.message : err}`);
       showError("This home couldn't be loaded. Try refreshing, or pick a different demo home.");
     }
   }
