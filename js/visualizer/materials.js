@@ -13,11 +13,7 @@
 
 import * as THREE from 'three';
 import { MAT, optionById } from './config.js';
-import {
-  getSidingTexture, getRoofingTexture, getTrimTexture, applyRepeat,
-} from './textures.js';
-
-const TILE_METERS = { siding: 2.4, roofing: 3.2, trim: 1.4 };
+import { getSidingTexture, getRoofingTexture, getTrimTexture } from './textures.js';
 
 function worldExtents(mesh) {
   const box = new THREE.Box3().setFromObject(mesh);
@@ -32,26 +28,21 @@ function largestTwo(size) {
   return { a: axes[0], b: axes[1], thin: axes[2] };
 }
 
-function cloneMap(tex) {
-  if (!tex) return null;
-  const c = tex.clone();
-  c.needsUpdate = true;
-  return c;
-}
-
-function texturedMaterial(mesh, base, tileMeters, extraProps = {}) {
-  const { size } = worldExtents(mesh);
-  const { a, b } = largestTwo(size);
-  const repeat = { x: Math.max(0.5, a.v / tileMeters), y: Math.max(0.5, b.v / tileMeters) };
-
-  const map = cloneMap(base.map);
-  const normalMap = cloneMap(base.normalMap);
-  const roughnessMap = cloneMap(base.roughnessMap);
-  [map, normalMap, roughnessMap].forEach((t) => applyRepeat(t, repeat));
-
+// One material (and one set of GPU textures) shared across every mesh in a
+// category — e.g. all 4 wall meshes get the *same* MAT_Siding material
+// object, not 4 independent clones. An earlier per-mesh-cloned-texture
+// version worked fine on desktop but multiplied GPU texture memory by the
+// mesh count on every single material change, which is exactly the kind of
+// thing that exhausts VRAM and silently kills the WebGL context on phones —
+// the house going solid black and staying black regardless of further
+// selections is the classic symptom of a lost context. Textures come from
+// textures.js's own cache (repeat baked in at build time there) and are
+// never disposed here — they're meant to live for the page's lifetime and
+// get reused every time that option is picked again.
+function texturedMaterial(base, extraProps = {}) {
   return new THREE.MeshStandardMaterial({
-    map, normalMap, roughnessMap,
-    roughness: roughnessMap ? 1 : (extraProps.roughness ?? 0.85),
+    map: base.map, normalMap: base.normalMap, roughnessMap: base.roughnessMap,
+    roughness: base.roughnessMap ? 1 : (extraProps.roughness ?? 0.85),
     metalness: 0,
     envMapIntensity: 0.7,
     ...extraProps,
@@ -101,10 +92,13 @@ function collectByMaterialName(root) {
   return groups;
 }
 
+// Only the material itself — never its texture maps. Siding/roofing/trim
+// maps come from textures.js's long-lived cache (shared across every mesh
+// and every future re-selection of that same option) and glass/hardware/flat
+// materials never carry a map at all, so there's nothing map-related that's
+// safe to free here without breaking the next reuse of a cached texture.
 function disposeMaterial(mat) {
-  if (!mat) return;
-  ['map', 'normalMap', 'roughnessMap'].forEach((k) => mat[k] && mat[k].dispose());
-  mat.dispose();
+  if (mat) mat.dispose();
 }
 
 // --- grille / sash bar geometry ---------------------------------------
@@ -190,22 +184,24 @@ export class HouseMaterialController {
     this.houseCenter = box.getCenter(new THREE.Vector3());
   }
 
-  _assign(matName, materialFactory) {
+  // Builds ONE material for the whole category and assigns that same
+  // instance to every mesh in the group (see texturedMaterial's comment for
+  // why sharing matters on mobile).
+  _assign(matName, mat) {
     const meshes = this.groups.get(matName);
     if (!meshes || !meshes.length) return;
+    // The replacement must keep carrying the MAT_* name forward — this.groups
+    // was captured once from the original GLB materials, but every apply()
+    // after the first is matching against whatever material is on the mesh
+    // *right now* (i.e. last apply's replacement), so a nameless material
+    // would silently stop matching after a single successful swap.
+    mat.name = matName;
     meshes.forEach((mesh) => {
-      const mat = materialFactory(mesh);
-      // The replacement must keep carrying the MAT_* name forward — this.groups
-      // was captured once from the original GLB materials, but every apply()
-      // after the first is matching against whatever material is on the mesh
-      // *right now* (i.e. last apply's replacement), so a nameless material
-      // would silently stop matching after a single successful swap.
-      mat.name = matName;
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       const next = mats.map((m) => (m && m.name === matName ? mat : m));
       mesh.material = Array.isArray(mesh.material) ? next : next[0];
-      this.created.push(mat);
     });
+    this.created.push(mat);
   }
 
   apply(selections) {
@@ -229,14 +225,14 @@ export class HouseMaterialController {
     const roofTex = getRoofingTexture(roofing.id, roofing.color);
     const trimTex = getTrimTexture(trim.id, trim.color);
 
-    this._assign(MAT.SIDING, (mesh) => texturedMaterial(mesh, sidingTex, TILE_METERS.siding, { roughness: siding.roughness }));
-    this._assign(MAT.ROOFING, (mesh) => texturedMaterial(mesh, roofTex, TILE_METERS.roofing, { roughness: roofing.roughness }));
-    this._assign(MAT.TRIM, (mesh) => texturedMaterial(mesh, trimTex, TILE_METERS.trim, { roughness: trim.roughness }));
-    this._assign(MAT.WINDOW_FRAME, () => flatMaterial(frame.color, frame.roughness));
-    this._assign(MAT.WINDOW_GLASS, () => glassMaterial(glass));
-    this._assign(MAT.DOOR_SLAB, () => flatMaterial(doorColor.color, doorColor.roughness));
-    this._assign(MAT.DOOR_GLASS, () => glassMaterial(glass));
-    this._assign(MAT.DOOR_HARDWARE, () => hardwareMaterial(hardware));
+    this._assign(MAT.SIDING, texturedMaterial(sidingTex, { roughness: siding.roughness }));
+    this._assign(MAT.ROOFING, texturedMaterial(roofTex, { roughness: roofing.roughness }));
+    this._assign(MAT.TRIM, texturedMaterial(trimTex, { roughness: trim.roughness }));
+    this._assign(MAT.WINDOW_FRAME, flatMaterial(frame.color, frame.roughness));
+    this._assign(MAT.WINDOW_GLASS, glassMaterial(glass));
+    this._assign(MAT.DOOR_SLAB, flatMaterial(doorColor.color, doorColor.roughness));
+    this._assign(MAT.DOOR_GLASS, glassMaterial(glass));
+    this._assign(MAT.DOOR_HARDWARE, hardwareMaterial(hardware));
     // MAT_Foundation is intentionally left untouched — fixed material, see ASSET-SPEC.md §5.
 
     const barMat = flatMaterial(frame.color, frame.roughness);

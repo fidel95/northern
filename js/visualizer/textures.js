@@ -70,11 +70,12 @@ function heightToNormalMap(heightCanvas, strength = 2.2) {
   return out;
 }
 
-function toTexture(cvs, srgb = false) {
+function toTexture(cvs, srgb = false, repeat = null) {
   const tex = new THREE.CanvasTexture(cvs);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.anisotropy = 4;
   if (srgb) tex.colorSpace = THREE.SRGBColorSpace;
+  if (repeat) tex.repeat.set(repeat.x, repeat.y);
   tex.needsUpdate = true;
   return tex;
 }
@@ -119,11 +120,12 @@ function lapSiding(colorHex) {
   }
   cctx.globalAlpha = 1;
 
+  const repeat = { x: 6, y: 8 };
   return {
-    map: toTexture(color, true),
-    normalMap: toTexture(heightToNormalMap(heightC, 1.6)),
-    roughnessMap: toTexture(rough),
-    repeat: { x: 6, y: 8 },
+    map: toTexture(color, true, repeat),
+    normalMap: toTexture(heightToNormalMap(heightC, 1.6), false, repeat),
+    roughnessMap: toTexture(rough, false, repeat),
+    repeat,
   };
 }
 
@@ -159,11 +161,12 @@ function boardBatten(colorHex) {
     hctx.fillRect(x + boardW - battenW - 2, 0, 2, SIZE);
   }
 
+  const repeat = { x: 5, y: 3 };
   return {
-    map: toTexture(color, true),
-    normalMap: toTexture(heightToNormalMap(heightC, 2.4)),
+    map: toTexture(color, true, repeat),
+    normalMap: toTexture(heightToNormalMap(heightC, 2.4), false, repeat),
     roughnessMap: null,
-    repeat: { x: 5, y: 3 },
+    repeat,
   };
 }
 
@@ -200,11 +203,12 @@ function shake(colorHex) {
   }
   cctx.globalAlpha = 1;
 
+  const repeat = { x: 5, y: 6 };
   return {
-    map: toTexture(color, true),
-    normalMap: toTexture(heightToNormalMap(heightC, 2.0)),
+    map: toTexture(color, true, repeat),
+    normalMap: toTexture(heightToNormalMap(heightC, 2.0), false, repeat),
     roughnessMap: null,
-    repeat: { x: 5, y: 6 },
+    repeat,
   };
 }
 
@@ -262,11 +266,12 @@ function shingleRoof(colorHex) {
     rctx.fillRect(rnd() * SIZE, rnd() * SIZE, 1, 1);
   }
 
+  const repeat = { x: 10, y: 10 };
   return {
-    map: toTexture(color, true),
-    normalMap: toTexture(heightToNormalMap(heightC, 1.8)),
-    roughnessMap: toTexture(rough),
-    repeat: { x: 10, y: 10 },
+    map: toTexture(color, true, repeat),
+    normalMap: toTexture(heightToNormalMap(heightC, 1.8), false, repeat),
+    roughnessMap: toTexture(rough, false, repeat),
+    repeat,
   };
 }
 
@@ -291,11 +296,12 @@ function trimTexture(colorHex) {
     cctx.fillRect(rnd() * 128, rnd() * 128, 1, 1 + rnd() * 3);
   }
   cctx.globalAlpha = 1;
+  const repeat = { x: 2, y: 2 };
   return {
-    map: toTexture(color, true),
-    normalMap: toTexture(heightToNormalMap(heightC, 0.6)),
+    map: toTexture(color, true, repeat),
+    normalMap: toTexture(heightToNormalMap(heightC, 0.6), false, repeat),
     roughnessMap: null,
-    repeat: { x: 2, y: 2 },
+    repeat,
   };
 }
 

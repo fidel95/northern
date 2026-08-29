@@ -64,6 +64,20 @@ export function createRenderLoop(tick) {
   return { start, stop };
 }
 
+// A lost WebGL context (most commonly a mobile GPU running out of texture
+// memory) leaves the canvas permanently black — every future draw call is
+// silently a no-op, so material changes look like they "do nothing." Full
+// in-place context recovery is fragile (every texture/shader needs
+// re-uploading, including the baked PMREM environment), so rather than fake
+// a recovery that might half-work, this just surfaces it so the caller can
+// show a clear "reload" message instead of a silent dead canvas.
+export function watchContextLoss(canvas, onLost) {
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    onLost();
+  });
+}
+
 export function disposeObject3D(root) {
   root.traverse((obj) => {
     if (obj.geometry) obj.geometry.dispose();

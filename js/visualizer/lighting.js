@@ -63,7 +63,10 @@ export function createLighting(renderer, scene) {
   sunLight.position.copy(sunDir).multiplyScalar(40);
   sunLight.target.position.set(0, 1, 0);
   sunLight.castShadow = true;
-  sunLight.shadow.mapSize.set(2048, 2048);
+  // 1024 rather than 2048 — PCFSoftShadowMap already softens the edges, and
+  // a smaller shadow map matters more on phone GPUs than the extra crispness
+  // does at this scene scale.
+  sunLight.shadow.mapSize.set(1024, 1024);
   sunLight.shadow.camera.left = -14;
   sunLight.shadow.camera.right = 14;
   sunLight.shadow.camera.top = 14;
