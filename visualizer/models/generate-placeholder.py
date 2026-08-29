@@ -150,6 +150,68 @@ def euler_to_quat(x, y, z):
     return qx, qy, qz, qw
 
 
+def add_gable_node(b: Builder, name, material_idx, thickness, rise, depth, position, parent_children=None):
+    """A flat triangular wall panel (gable end infill) extruded to `thickness`
+    — vertical-ish, facing outward along local X, NOT a solid wedge. Base
+    corners at local y=0 (the eave line) spanning z=[-depth/2, depth/2];
+    apex at local y=rise, z=0 (the ridge). Earlier this was approximated
+    with a full-height, full-depth box, which is exactly the oversized
+    rectangular block that made the roofline look broken/deformed."""
+    t = thickness / 2.0
+    d = depth / 2.0
+    A0 = (-t, 0.0, -d); B0 = (-t, 0.0, d); C0 = (-t, rise, 0.0)
+    A1 = (t, 0.0, -d); B1 = (t, 0.0, d); C1 = (t, rise, 0.0)
+
+    positions, normals, uvs, indices = [], [], [], []
+
+    def add_tri(p0, p1, p2, uv0=(0, 0), uv1=(1, 0), uv2=(0.5, 1)):
+        base = len(positions)
+        v1 = tuple(p1[i] - p0[i] for i in range(3))
+        v2 = tuple(p2[i] - p0[i] for i in range(3))
+        n = (
+            v1[1] * v2[2] - v1[2] * v2[1],
+            v1[2] * v2[0] - v1[0] * v2[2],
+            v1[0] * v2[1] - v1[1] * v2[0],
+        )
+        length = math.sqrt(sum(c * c for c in n)) or 1.0
+        n = tuple(c / length for c in n)
+        for p, uv in ((p0, uv0), (p1, uv1), (p2, uv2)):
+            positions.append(p)
+            normals.append(n)
+            uvs.append(uv)
+        indices.extend([base, base + 1, base + 2])
+
+    def add_quad(p0, p1, p2, p3):
+        add_tri(p0, p1, p2, (0, 0), (1, 0), (1, 1))
+        add_tri(p0, p2, p3, (0, 0), (1, 1), (0, 1))
+
+    # outward caps — the actual visible triangular wall panels
+    add_tri(A0, B0, C0, (0, 0), (1, 0), (0.5, 1))
+    add_tri(A1, C1, B1, (0, 0), (0.5, 1), (1, 0))
+    # thin edges closing the panel — minor, but keeps the mesh watertight
+    add_quad(A0, A1, B1, B0)
+    add_quad(A0, C0, C1, A1)
+    add_quad(B0, B1, C1, C0)
+
+    pos_acc = b.add_accessor(positions, VEC3, FLOAT, ARRAY_BUFFER, minmax=True)
+    norm_acc = b.add_accessor(normals, VEC3, FLOAT, ARRAY_BUFFER)
+    uv_acc = b.add_accessor(uvs, VEC2, FLOAT, ARRAY_BUFFER)
+    idx_acc = b.add_index_accessor(list(range(len(positions))))
+
+    mesh = Mesh(name=name, primitives=[Primitive(
+        attributes=Attributes(POSITION=pos_acc, NORMAL=norm_acc, TEXCOORD_0=uv_acc),
+        indices=idx_acc, material=material_idx,
+    )])
+    b.meshes.append(mesh)
+    mesh_idx = len(b.meshes) - 1
+    node = Node(name=name, mesh=mesh_idx, translation=list(position))
+    b.nodes.append(node)
+    node_idx = len(b.nodes) - 1
+    if parent_children is not None:
+        parent_children.append(node_idx)
+    return node_idx
+
+
 def add_empty_node(b: Builder, name, position=(0, 0, 0), children=None):
     node = Node(name=name, translation=list(position))
     if children:
@@ -203,10 +265,10 @@ def build():
     add_box_node(b, 'Roof_Back', mat_roof, (roof_width, 0.12, slope_len), (0, mid_y, -(DEPTH / 4 + OVERHANG / 4)),
                  rotation_deg=(PITCH_DEG, 0, 0), parent_children=roof_children)
     add_box_node(b, 'Roof_Ridge', mat_roof, (roof_width, 0.14, 0.14), (0, ridge_y, 0), parent_children=roof_children)
-    add_box_node(b, 'Roof_GableFill_Left', mat_siding, (0.15, rise, DEPTH),
-                 (-WIDTH / 2, WALL_H + rise / 2, 0), parent_children=roof_children)
-    add_box_node(b, 'Roof_GableFill_Right', mat_siding, (0.15, rise, DEPTH),
-                 (WIDTH / 2, WALL_H + rise / 2, 0), parent_children=roof_children)
+    add_gable_node(b, 'Roof_GableFill_Left', mat_siding, 0.15, rise, DEPTH,
+                   (-WIDTH / 2, WALL_H, 0), parent_children=roof_children)
+    add_gable_node(b, 'Roof_GableFill_Right', mat_siding, 0.15, rise, DEPTH,
+                   (WIDTH / 2, WALL_H, 0), parent_children=roof_children)
     roof_grp = add_empty_node(b, 'Roof', children=roof_children)
 
     trim_children = []

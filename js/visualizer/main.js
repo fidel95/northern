@@ -4,7 +4,7 @@
 
 import * as THREE from 'three';
 import {
-  createRenderer, createScene, fitRendererToContainer, createRenderLoop, disposeObject3D,
+  createRenderer, createScene, fitRendererToContainer, createRenderLoop, disposeObject3D, watchContextLoss,
 } from './sceneSetup.js';
 import { createCameraRig } from './cameraRig.js';
 import { createLighting } from './lighting.js';
@@ -62,6 +62,15 @@ function init() {
   const loop = createRenderLoop(() => {
     rig.controls.update();
     renderer.render(scene, rig.camera);
+  });
+
+  watchContextLoss(canvas, () => {
+    loop.stop();
+    showError('The 3D preview needs to reload on this device. Tap to try again.');
+    loadingEl.classList.add('is-reloadable');
+  });
+  loadingEl.addEventListener('click', () => {
+    if (loadingEl.classList.contains('is-reloadable')) location.reload();
   });
 
   let houseGroup = null;
