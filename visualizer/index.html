@@ -18,6 +18,14 @@
 <link rel="stylesheet" href="../css/components.css">
 <link rel="stylesheet" href="../css/content.css">
 <link rel="stylesheet" href="../css/visualizer.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.185.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.185.1/examples/jsm/"
+  }
+}
+</script>
 </head>
 <body>
 
@@ -77,60 +85,74 @@
   </div>
 </section>
 
-<div class="viz-stage" data-visualizer>
+<div class="viz-stage" data-viz3d>
   <div class="viz-grid">
 
     <div>
       <div class="viz-modetabs">
-        <button type="button" class="viz-modetab" data-mode="demo" aria-selected="true">Demo homes</button>
-        <button type="button" class="viz-modetab" data-mode="upload" aria-selected="false">Upload your photo</button>
+        <button type="button" class="viz-modetab" data-viz3d-modetab="3d" aria-selected="true">3D Home</button>
+        <button type="button" class="viz-modetab" data-viz3d-modetab="photo" aria-selected="false">My Home</button>
       </div>
 
-      <div class="viz-homes" role="tablist" aria-label="Base home"></div>
+      <div class="viz-homes" role="tablist" aria-label="Base home" data-viz3d-homes></div>
 
-      <div class="viz-canvas-wrap">
-        <canvas class="viz-canvas" width="960" height="640" aria-label="Home exterior preview"></canvas>
+      <div class="viz-canvas-wrap viz3d-canvas-wrap" data-viz3d-canvaswrap>
+        <canvas class="viz3d-canvas" data-viz3d-canvas aria-label="3D home exterior preview"></canvas>
+        <canvas class="viz-canvas viz3d-photo-canvas" data-viz3d-photocanvas width="960" height="640" aria-label="Your home photo preview" hidden></canvas>
+
+        <div class="viz3d-loading" data-viz3d-loading>
+          <span class="viz3d-loading__word">Northern Pines</span>
+          <span class="viz3d-loading__sub" data-viz3d-loadsub>Preparing your home&hellip;</span>
+          <div class="viz3d-loading__track"><div class="viz3d-loading__fill" data-viz3d-loadfill></div></div>
+        </div>
+
+        <div class="viz3d-fallback" data-viz3d-fallback hidden>
+          <p>Your browser doesn&rsquo;t support the 3D home visualizer.<br>Please try Chrome, Safari, Edge, or Firefox on a modern device.</p>
+        </div>
+
+        <div class="viz3d-hud" data-viz3d-hud hidden>
+          <button type="button" class="viz3d-hud-btn" data-viz3d-reset>Reset view</button>
+        </div>
       </div>
 
-      <p class="viz-status">Tap a part of the house, or use the list on the right.</p>
+      <p class="viz-status" data-viz3d-status>Drag to rotate the house. Scroll or pinch to zoom.</p>
 
       <div class="viz-actions">
-        <button type="button" class="viz-btn-outline viz-reset">Reset</button>
-        <button type="button" class="viz-btn-outline viz-download">Download preview</button>
-        <a href="/estimate/?tab=windows&amp;style=doublehung" class="viz-btn-solid viz-estimate-link">See This Configuration's Price &rarr;</a>
+        <button type="button" class="viz-btn-outline" data-viz3d-resetconfig>Reset selections</button>
+        <button type="button" class="viz-btn-outline" data-viz3d-snapshot>Take Snapshot</button>
+        <a href="/estimate/?tab=windows&amp;style=doublehung" class="viz-btn-solid" data-viz3d-estimatelink>See This Configuration's Price &rarr;</a>
       </div>
 
-      <div class="viz-upload-panel">
+      <div class="viz-upload-panel" data-viz3d-uploadpanel>
         <h2>Your own photo</h2>
-        <p>Upload a straight-on shot of the elevation you want to change. Pick a zone on the right &mdash; Windows, Siding, Roof, or Trim &mdash; then tap its four corners: top-left, top-right, bottom-right, bottom-left. Windows get fit with the selected style; siding, roof, and trim get recolored in place.</p>
+        <p>Upload a straight-on shot of the elevation you want to change. Pick a zone on the right &mdash; Windows, Siding, Roofing, or Trim &mdash; then tap its four corners: top-left, top-right, bottom-right, bottom-left. Windows get fit with the selected style; siding, roofing, and trim get recolored in place.</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button type="button" class="viz-upload-btn viz-pickfile">Choose a photo</button>
-          <button type="button" class="viz-btn-outline viz-undo">Undo last opening</button>
+          <button type="button" class="viz-upload-btn" data-viz3d-pickfile>Choose a photo</button>
+          <button type="button" class="viz-btn-outline" data-viz3d-undo>Undo last opening</button>
         </div>
-        <input type="file" accept="image/*" class="viz-file" style="display:none">
-        <p class="viz-upload-note">PATH B LIMITATION &mdash; openings are traced by hand, not detected automatically. Automatic segmentation of an arbitrary photo requires the licensed platform described in Section 6.3 of the build spec.</p>
+        <input type="file" accept="image/*" data-viz3d-fileinput style="display:none">
+        <p class="viz-upload-note">Openings on your photo are traced by hand, corner by corner &mdash; there's no automatic detection yet. Everything runs in your browser; nothing is uploaded anywhere.</p>
       </div>
     </div>
 
-    <aside class="viz-panel">
+    <aside class="viz-panel" data-viz3d-panel>
       <div class="viz-panel__inner">
         <div class="viz-panel__head">
-          <h2>Windows</h2>
-          <button type="button" class="viz-panel__close">Done</button>
+          <h2>Customize your home</h2>
+          <button type="button" class="viz-panel__close" data-viz3d-panelclose>Done</button>
         </div>
-        <p class="viz-panel__hint">These four choices apply to every window on the elevation.</p>
 
         <fieldset class="viz-zonefield">
           <legend>Select a part of the house</legend>
-          <div class="viz-zonegrid"></div>
+          <div class="viz-zonegrid" data-viz3d-categorylist></div>
         </fieldset>
 
-        <div class="viz-controls"></div>
+        <div class="viz-controls" data-viz3d-controls></div>
       </div>
     </aside>
   </div>
 
-  <button type="button" class="viz-sheet-trigger">Change windows</button>
+  <button type="button" class="viz-sheet-trigger" data-viz3d-sheettrigger>Customize</button>
 </div>
 
 <section class="section--inset section--bordered" data-reveal="1" style="padding:clamp(56px,7vw,90px) 0">
@@ -138,7 +160,7 @@
     <h2 class="section-title" style="margin-bottom:40px;max-width:600px">What the visualizer is, and isn't.</h2>
     <div class="viz-explain-grid">
       <div class="viz-explain-cell"><span class="num">01</span><h3>It matches the catalog</h3><p>Every style, frame color, grille, and glass package here is one we manufacture and one the <a href="/estimate/">estimate tool</a> prices. Nothing shown is aspirational.</p></div>
-      <div class="viz-explain-cell"><span class="num">02</span><h3>It's a drawing, not a render</h3><p>The demo homes are illustrated so the tool works instantly, on any connection, with no upload. Proportions are honest; textures are simplified.</p></div>
+      <div class="viz-explain-cell"><span class="num">02</span><h3>It's a real 3D scene</h3><p>The demo home is a real, lit 3D model you can rotate and zoom &mdash; not an illustration. It runs entirely in your browser, on any modern phone or laptop.</p></div>
       <div class="viz-explain-cell"><span class="num">03</span><h3>Your photo needs four taps</h3><p>Openings on an uploaded photo are traced by hand, corner by corner. The fit is perspective-correct once you've marked the four corners.</p></div>
       <div class="viz-explain-cell"><span class="num">04</span><h3>A designer still measures</h3><p>Nothing here replaces the measure visit. It replaces the part where you try to imagine it from a brochure.</p></div>
     </div>
@@ -150,7 +172,7 @@
     <div>
       <h2>Send us what you built.</h2>
       <p>Your current configuration is written into the message below. A designer will bring physical samples of exactly these choices to the consultation.</p>
-      <a href="/estimate/?tab=windows&amp;style=doublehung" class="btn-lg btn-lg--solid viz-estimate-link-cta">Price This Configuration &rarr;</a>
+      <a href="/estimate/?tab=windows&amp;style=doublehung" class="btn-lg btn-lg--solid" data-viz3d-estimatelink>Price This Configuration &rarr;</a>
     </div>
     <form class="lead-form" action="https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00Dhm00000374Vz" method="POST">
       <input type="hidden" name="captcha_settings" value="{&quot;keyname&quot;:&quot;npcsv2&quot;,&quot;fallback&quot;:&quot;true&quot;,&quot;orgId&quot;:&quot;00Dhm00000374Vz&quot;,&quot;ts&quot;:&quot;&quot;}">
@@ -277,6 +299,6 @@
 <script src="../js/leadform.js"></script>
 <script src="../js/site.js"></script>
 <script src="../js/motion.js" defer></script>
-<script src="../js/visualizer.js" defer></script>
+<script type="module" src="../js/visualizer/main.js"></script>
 </body>
 </html>
