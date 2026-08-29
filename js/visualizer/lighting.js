@@ -36,28 +36,30 @@ function configureSky(sky, params) {
 }
 
 export function createLighting(renderer, scene) {
+  // Tone mapping / shadow renderer flags and the two basic lights go first,
+  // unconditionally, before anything that could fail — a mobile report
+  // showed the house rendering as a pure black silhouette against a
+  // correctly-lit sky, which only makes sense if scene lighting ended up at
+  // effectively zero while the self-lit Sky shader (unaffected by scene
+  // lights) kept working fine. Whatever WebGL feature was behind that on
+  // that specific device, the fix is to make basic illumination not depend
+  // on it: AmbientLight has no dependency on shadow maps, environment maps,
+  // or render-to-texture support — it is about as close to "always works on
+  // any WebGL implementation" as three.js lighting gets — so the worst case
+  // is now flatly lit, not solid black.
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = SUN_PARAMS.exposure;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+  scene.add(ambient);
+
   const sky = new Sky();
   sky.scale.setScalar(20000);
   const sunDir = configureSky(sky, SUN_PARAMS);
   scene.add(sky);
-
-  // Separate, unparented sky instance used only to bake the environment map —
-  // PMREMGenerator wants its own Scene, and an Object3D can't have two parents.
-  const envScene = new THREE.Scene();
-  const envSky = new Sky();
-  envSky.scale.setScalar(20000);
-  configureSky(envSky, SUN_PARAMS);
-  envScene.add(envSky);
-
-  const pmrem = new THREE.PMREMGenerator(renderer);
-  const envRT = pmrem.fromScene(envScene, 0.035);
-  scene.environment = envRT.texture;
-  // The raw sky shader is HDR-bright near the sun disc — without this the
-  // baked environment map alone overexposes every PBR surface in the scene
-  // before the directional "sun" light below even factors in.
-  scene.environmentIntensity = 0.55;
-  envSky.geometry.dispose();
-  envSky.material.dispose();
 
   const sunLight = new THREE.DirectionalLight(0xfff2df, 1.6);
   sunLight.position.copy(sunDir).multiplyScalar(40);
@@ -80,15 +82,38 @@ export function createLighting(renderer, scene) {
   const fill = new THREE.HemisphereLight(0xcfe0e8, 0x4a4638, 0.3);
   scene.add(fill);
 
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = SUN_PARAMS.exposure;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // The environment map is the fanciest, most failure-prone piece here
+  // (render-to-texture + mip generation) — a device that can't do it should
+  // just keep the ambient/directional/hemisphere lighting above rather than
+  // losing lighting entirely.
+  let pmrem = null;
+  let envRT = null;
+  try {
+    const envScene = new THREE.Scene();
+    const envSky = new Sky();
+    envSky.scale.setScalar(20000);
+    configureSky(envSky, SUN_PARAMS);
+    envScene.add(envSky);
+
+    pmrem = new THREE.PMREMGenerator(renderer);
+    envRT = pmrem.fromScene(envScene, 0.035);
+    scene.environment = envRT.texture;
+    // The raw sky shader is HDR-bright near the sun disc — without this the
+    // baked environment map alone overexposes every PBR surface in the
+    // scene before the directional "sun" light above even factors in.
+    scene.environmentIntensity = 0.55;
+    envSky.geometry.dispose();
+    envSky.material.dispose();
+  } catch (err) {
+    console.warn('[visualizer] environment map generation failed, continuing with direct lighting only:', err);
+  }
 
   return {
-    sky, sunLight, fill,
-    dispose() { pmrem.dispose(); envRT.texture.dispose(); },
+    sky, sunLight, fill, ambient,
+    dispose() {
+      if (pmrem) pmrem.dispose();
+      if (envRT) envRT.texture.dispose();
+    },
   };
 }
 
