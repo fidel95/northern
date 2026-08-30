@@ -261,9 +261,9 @@ def build():
 
     roof_children = []
     add_box_node(b, 'Roof_Front', mat_roof, (roof_width, 0.12, slope_len), (0, mid_y, DEPTH / 4 + OVERHANG / 4),
-                 rotation_deg=(-PITCH_DEG, 0, 0), parent_children=roof_children)
-    add_box_node(b, 'Roof_Back', mat_roof, (roof_width, 0.12, slope_len), (0, mid_y, -(DEPTH / 4 + OVERHANG / 4)),
                  rotation_deg=(PITCH_DEG, 0, 0), parent_children=roof_children)
+    add_box_node(b, 'Roof_Back', mat_roof, (roof_width, 0.12, slope_len), (0, mid_y, -(DEPTH / 4 + OVERHANG / 4)),
+                 rotation_deg=(-PITCH_DEG, 0, 0), parent_children=roof_children)
     add_box_node(b, 'Roof_Ridge', mat_roof, (roof_width, 0.14, 0.14), (0, ridge_y, 0), parent_children=roof_children)
     add_gable_node(b, 'Roof_GableFill_Left', mat_siding, 0.15, rise, DEPTH,
                    (-WIDTH / 2, WALL_H, 0), parent_children=roof_children)
