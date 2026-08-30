@@ -12,6 +12,7 @@ import { buildEnvironment } from './environment.js';
 import { loadHouse } from './houseLoader.js';
 import { HouseMaterialController } from './materials.js';
 import { houseConfigurations } from './config.js';
+import { buildBeforeHouse, disposeBeforeHouse, renderCompareSplit } from './compareMode.js';
 import { VisualizerState } from './state.js';
 import { createUI } from './ui.js';
 import { categoryForMaterialName } from './categories.js';
@@ -65,9 +66,22 @@ function init() {
   const resizeObserver = new ResizeObserver(() => fitRendererToContainer(renderer, rig.camera, canvasWrap));
   resizeObserver.observe(canvasWrap);
 
+  // Compare (before/after) is transient render state, not a "selection" —
+  // it changes every frame while the customer drags the slider, so it lives
+  // here as plain vars the render loop reads directly rather than going
+  // through VisualizerState's pub/sub + full UI re-render on every tick.
+  let compareOn = false;
+  let compareFraction = 0.5;
+
   const loop = createRenderLoop(() => {
     rig.controls.update();
-    renderer.render(scene, rig.camera);
+    if (compareOn && beforeGroup && houseGroup) {
+      renderCompareSplit(renderer, scene, rig.camera, beforeGroup, houseGroup, compareFraction, canvas.width, canvas.height);
+    } else {
+      if (beforeGroup) beforeGroup.visible = false;
+      if (houseGroup) houseGroup.visible = true;
+      renderer.render(scene, rig.camera);
+    }
   });
 
   watchContextLoss(canvas, () => {
@@ -82,6 +96,8 @@ function init() {
   let houseGroup = null;
   let materialController = null;
   let raycastTargets = [];
+  let beforeGroup = null;
+  let beforeMaterialController = null;
 
   function setLoading(pct, text) {
     loadingEl.hidden = false;
@@ -113,6 +129,9 @@ function init() {
         if (materialController) materialController.dispose();
         disposeObject3D(houseGroup);
       }
+      disposeBeforeHouse(scene, beforeGroup, beforeMaterialController, disposeObject3D);
+      beforeGroup = null;
+      beforeMaterialController = null;
 
       houseGroup = gltf.scene;
       scene.add(houseGroup);
@@ -130,6 +149,15 @@ function init() {
       diagnostics.log(`material groups found: ${[...materialController.groups.keys()].join(', ')}`);
       materialController.apply(state.selections);
       diagnostics.log('materials applied');
+
+      // Before/After comparison needs a second copy of the same house on a
+      // stock/default configuration. Cloning houseGroup here (after apply()
+      // above) is safe: clone() shares material *references*, and each
+      // HouseMaterialController only ever reassigns mesh.material on its
+      // own group's meshes — it never mutates a shared material's contents
+      // — so building the "before" controller off the clone and applying
+      // DEFAULT_SELECTIONS to it leaves houseGroup's own materials alone.
+      ({ beforeGroup, controller: beforeMaterialController } = buildBeforeHouse(houseGroup, scene));
 
       raycastTargets = [];
       houseGroup.traverse((o) => { if (o.isMesh) raycastTargets.push(o); });
@@ -203,9 +231,12 @@ function init() {
       state.reset();
       if (materialController) materialController.apply(state.selections);
       photoMode.reset();
+      ui.resetCompare();
     },
     onPickFile: (file) => photoMode.loadFile(file),
     onUndo: () => photoMode.undoLast(),
+    onCompareToggle: (on) => { compareOn = on; },
+    onComparePos: (fraction) => { compareFraction = fraction; },
   });
 
   const params = new URLSearchParams(location.search);

@@ -14,10 +14,17 @@ function el(tag, className, text) {
 }
 
 function isNarrow() {
-  return window.matchMedia('(max-width: 900px)').matches;
+  // Presentation Mode forces the same compact bottom-sheet configurator
+  // used on phones/tablets — regardless of actual screen width — so the 3D
+  // view gets the space instead of a permanent sidebar. Reuses the mobile
+  // layout wholesale rather than building a second "presentation" panel.
+  return window.matchMedia('(max-width: 900px)').matches || document.body.classList.contains('viz-present');
 }
 
-export function createUI(root, { state, onSelect, onHouseChange, onMode, onSnapshot, onResetView, onResetConfig, onPickFile, onUndo }) {
+export function createUI(root, {
+  state, onSelect, onHouseChange, onMode, onSnapshot, onResetView, onResetConfig, onPickFile, onUndo,
+  onCompareToggle, onComparePos,
+}) {
   const refs = {
     modeTabs: root.querySelectorAll('[data-viz3d-modetab]'),
     homes: root.querySelector('[data-viz3d-homes]'),
@@ -39,9 +46,69 @@ export function createUI(root, { state, onSelect, onHouseChange, onMode, onSnaps
     canvasWrap: root.querySelector('[data-viz3d-canvaswrap]'),
     photoCanvas: root.querySelector('[data-viz3d-photocanvas]'),
     canvas3d: root.querySelector('[data-viz3d-canvas]'),
+    compareToggle: root.querySelector('[data-viz3d-comparetoggle]'),
+    compareOverlay: root.querySelector('[data-viz3d-compare]'),
+    compareHandle: root.querySelector('[data-viz3d-comparehandle]'),
+    presentToggle: root.querySelector('[data-viz3d-presenttoggle]'),
+    presentExit: root.querySelector('[data-viz3d-presentexit]'),
   };
 
   let sheetOpen = false;
+  let compareOn = false;
+  let compareFraction = 0.5;
+
+  function setComparePos(fraction, { silent } = {}) {
+    compareFraction = Math.min(0.94, Math.max(0.06, fraction));
+    refs.compareHandle.style.left = `${compareFraction * 100}%`;
+    refs.compareHandle.setAttribute('aria-valuenow', String(Math.round(compareFraction * 100)));
+    if (!silent) onComparePos(compareFraction);
+  }
+
+  function setCompareOn(on) {
+    compareOn = on;
+    refs.compareToggle.setAttribute('aria-pressed', on ? 'true' : 'false');
+    refs.compareOverlay.hidden = !on;
+    refs.compareOverlay.setAttribute('aria-hidden', on ? 'false' : 'true');
+    onCompareToggle(on);
+  }
+
+  function fractionFromClientX(clientX) {
+    const rect = refs.canvasWrap.getBoundingClientRect();
+    return (clientX - rect.left) / rect.width;
+  }
+
+  refs.compareToggle.addEventListener('click', () => setCompareOn(!compareOn));
+
+  let dragging = false;
+  refs.compareHandle.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    refs.compareHandle.setPointerCapture(e.pointerId);
+  });
+  refs.compareHandle.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    setComparePos(fractionFromClientX(e.clientX));
+  });
+  refs.compareHandle.addEventListener('pointerup', (e) => {
+    dragging = false;
+    if (refs.compareHandle.hasPointerCapture(e.pointerId)) refs.compareHandle.releasePointerCapture(e.pointerId);
+  });
+  refs.compareHandle.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') { setComparePos(compareFraction - 0.05); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { setComparePos(compareFraction + 0.05); e.preventDefault(); }
+  });
+
+  function setPresentation(on) {
+    document.body.classList.toggle('viz-present', on);
+    if (refs.presentExit) refs.presentExit.hidden = !on;
+    if (refs.presentToggle) refs.presentToggle.textContent = on ? 'Exit Presentation Mode' : 'Presentation Mode';
+    renderAll();
+  }
+
+  if (refs.presentToggle) refs.presentToggle.addEventListener('click', () => setPresentation(!document.body.classList.contains('viz-present')));
+  if (refs.presentExit) refs.presentExit.addEventListener('click', () => setPresentation(false));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('viz-present')) setPresentation(false);
+  });
 
   function makeOptionButton(groupKey, option, kind, active) {
     const btn = document.createElement('button');
@@ -143,6 +210,13 @@ export function createUI(root, { state, onSelect, onHouseChange, onMode, onSnaps
     if (refs.canvas3d) refs.canvas3d.hidden = state.mode !== '3d';
     if (refs.photoCanvas) refs.photoCanvas.hidden = state.mode !== 'photo';
 
+    // Before/After only makes sense against the live 3D model, not the
+    // hand-traced photo overlay — drop out of compare rather than leave a
+    // dead control up when the customer switches to "My Home".
+    refs.compareToggle.disabled = state.mode !== '3d';
+    refs.compareToggle.hidden = state.mode !== '3d';
+    if (state.mode !== '3d' && compareOn) setCompareOn(false);
+
     renderHomes();
     renderCategoryList();
     renderControls();
@@ -178,6 +252,9 @@ export function createUI(root, { state, onSelect, onHouseChange, onMode, onSnaps
 
   function setStatus(text) { refs.status.textContent = text; }
 
+  function resetCompare() { setComparePos(0.5, { silent: true }); }
+
+  setComparePos(0.5, { silent: true });
   renderAll();
-  return { renderAll, setStatus, refs };
+  return { renderAll, setStatus, resetCompare, refs };
 }

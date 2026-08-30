@@ -88,10 +88,16 @@
 <div class="viz-stage" data-viz3d>
   <div class="viz-grid">
 
-    <div>
-      <div class="viz-modetabs">
-        <button type="button" class="viz-modetab" data-viz3d-modetab="3d" aria-selected="true">3D Home</button>
-        <button type="button" class="viz-modetab" data-viz3d-modetab="photo" aria-selected="false">My Home</button>
+    <div class="viz-main" data-viz3d-main>
+      <div class="viz-toolbar">
+        <div class="viz-modetabs">
+          <button type="button" class="viz-modetab" data-viz3d-modetab="3d" aria-selected="true">3D Home</button>
+          <button type="button" class="viz-modetab" data-viz3d-modetab="photo" aria-selected="false">My Home</button>
+        </div>
+
+        <button type="button" class="viz-compare-toggle" data-viz3d-comparetoggle aria-pressed="false">
+          <span aria-hidden="true" class="viz-compare-toggle__icon">&#x25D0;</span> Compare Before / After
+        </button>
       </div>
 
       <div class="viz-homes" role="tablist" aria-label="Base home" data-viz3d-homes></div>
@@ -99,6 +105,14 @@
       <div class="viz-canvas-wrap viz3d-canvas-wrap" data-viz3d-canvaswrap>
         <canvas class="viz3d-canvas" data-viz3d-canvas aria-label="3D home exterior preview"></canvas>
         <canvas class="viz-canvas viz3d-photo-canvas" data-viz3d-photocanvas width="960" height="640" aria-label="Your home photo preview" hidden></canvas>
+
+        <div class="viz-compare" data-viz3d-compare hidden aria-hidden="true">
+          <span class="viz-compare__label viz-compare__label--before">Current Home</span>
+          <span class="viz-compare__label viz-compare__label--after">Your New Look</span>
+          <div class="viz-compare__handle" data-viz3d-comparehandle role="slider" aria-label="Before/after comparison" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0">
+            <span class="viz-compare__grip"></span>
+          </div>
+        </div>
 
         <div class="viz3d-loading" data-viz3d-loading>
           <span class="viz3d-loading__word">Northern Pines</span>
@@ -113,13 +127,16 @@
         <div class="viz3d-hud" data-viz3d-hud hidden>
           <button type="button" class="viz3d-hud-btn" data-viz3d-reset>Reset view</button>
         </div>
+
+        <button type="button" class="viz-present-exit" data-viz3d-presentexit hidden>&larr; Exit Presentation Mode</button>
       </div>
 
       <p class="viz-status" data-viz3d-status>Drag to rotate the house. Scroll or pinch to zoom.</p>
 
       <div class="viz-actions">
-        <button type="button" class="viz-btn-outline" data-viz3d-resetconfig>Reset selections</button>
+        <button type="button" class="viz-btn-outline" data-viz3d-resetconfig>Reset design</button>
         <button type="button" class="viz-btn-outline" data-viz3d-snapshot>Take Snapshot</button>
+        <button type="button" class="viz-btn-outline" data-viz3d-presenttoggle>Presentation Mode</button>
         <a href="/estimate/?tab=windows&amp;style=doublehung" class="viz-btn-solid" data-viz3d-estimatelink>See This Configuration's Price &rarr;</a>
       </div>
 
