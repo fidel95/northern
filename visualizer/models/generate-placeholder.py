@@ -236,6 +236,7 @@ def build():
     # base put their frames 4cm inside the wall volume, coincident with/
     # inside the siding and z-fighting with it (the "door glitching").
     FRONT_FACE = DEPTH / 2 + WALL_THICKNESS / 2
+    SIDE_FACE = WIDTH / 2 + WALL_THICKNESS / 2
 
     mat_siding = b.get_material('MAT_Siding', (0.83, 0.80, 0.72), roughness=0.9)
     mat_roof = b.get_material('MAT_Roofing', (0.16, 0.16, 0.17), roughness=0.75)
@@ -289,26 +290,55 @@ def build():
         add_box_node(b, f'Trim_CornerBoard_{"L" if cx < 0 else "R"}', mat_trim, (0.22, WALL_H, 0.22), (cx, WALL_H / 2, 0), parent_children=trim_children)
     trim_grp = add_empty_node(b, 'Trim', children=trim_children)
 
-    def make_window(name, x, sill_y, w=1.15, h=1.25):
+    # side: which exterior wall the window sits on. `coord` is position along
+    # that wall's run — x for front/back, z for left/right. Frame sits a flat
+    # 6cm proud of the wall's outer face; glass sits a further 9cm proud of
+    # the wall (i.e. 3cm clear of the frame's own outer face) so neither
+    # shares an exactly coincident plane with the wall or with each other —
+    # coincident planes z-fight (flicker) since the depth buffer can't
+    # consistently resolve which surface is in front.
+    def make_window(name, side, coord, sill_y, w=1.15, h=1.25):
         children = []
-        cz = FRONT_FACE + 0.06
-        add_box_node(b, f'{name}_Frame', mat_frame, (w + 0.16, h + 0.16, 0.10), (x, sill_y + h / 2, cz), parent_children=children)
-        add_box_node(b, f'{name}_Glass', mat_glass, (w - 0.08, h - 0.08, 0.02), (x, sill_y + h / 2, cz + 0.05), parent_children=children)
+        y = sill_y + h / 2
+        frame_t, glass_t, standoff, clearance = 0.10, 0.02, 0.06, 0.03
+        if side in ('front', 'back'):
+            outward = 1 if side == 'front' else -1
+            frame_pos_axis = outward * FRONT_FACE + outward * standoff
+            glass_pos_axis = frame_pos_axis + outward * (frame_t / 2 + clearance + glass_t / 2)
+            add_box_node(b, f'{name}_Frame', mat_frame, (w + 0.16, h + 0.16, frame_t), (coord, y, frame_pos_axis), parent_children=children)
+            add_box_node(b, f'{name}_Glass', mat_glass, (w - 0.08, h - 0.08, glass_t), (coord, y, glass_pos_axis), parent_children=children)
+        else:
+            outward = 1 if side == 'right' else -1
+            frame_pos_axis = outward * SIDE_FACE + outward * standoff
+            glass_pos_axis = frame_pos_axis + outward * (frame_t / 2 + clearance + glass_t / 2)
+            add_box_node(b, f'{name}_Frame', mat_frame, (frame_t, h + 0.16, w + 0.16), (frame_pos_axis, y, coord), parent_children=children)
+            add_box_node(b, f'{name}_Glass', mat_glass, (glass_t, h - 0.08, w - 0.08), (glass_pos_axis, y, coord), parent_children=children)
         return add_empty_node(b, name, children=children)
 
     windows_children = [
-        make_window('Window_Front_01', -3.0, 1.0),
-        make_window('Window_Front_02', -0.9, 1.0),
-        make_window('Window_Front_03', 3.0, 1.0, w=1.5),
+        make_window('Window_Front_01', 'front', -3.0, 1.0),
+        make_window('Window_Front_02', 'front', -0.9, 1.0),
+        make_window('Window_Front_03', 'front', 3.0, 1.0, w=1.5),
+        make_window('Window_Back_01', 'back', -3.0, 1.0),
+        make_window('Window_Back_02', 'back', 0.0, 1.0, w=1.5),
+        make_window('Window_Back_03', 'back', 3.0, 1.0),
+        make_window('Window_Left_01', 'left', -2.0, 1.0, w=1.0, h=1.15),
+        make_window('Window_Left_02', 'left', 1.6, 1.0, w=1.0, h=1.15),
+        make_window('Window_Right_01', 'right', -2.0, 1.0, w=1.0, h=1.15),
+        make_window('Window_Right_02', 'right', 1.6, 1.0, w=1.0, h=1.15),
     ]
     windows_grp = add_empty_node(b, 'Windows', children=windows_children)
 
     door_children = []
     dx, dw, dh = 1.15, 1.0, 2.05
     cz = FRONT_FACE + 0.06
+    # Slab is 0.08 thick (half=0.04), so its outer face sits at cz+0.04 — glass
+    # and hardware need to clear that by more than a hair or they land on the
+    # same plane as the slab face and z-fight (this is what was "glitching"
+    # on the door's glass panel: it previously sat exactly flush with it).
     add_box_node(b, 'Door_Front_Slab', mat_slab, (dw, dh, 0.08), (dx, dh / 2, cz), parent_children=door_children)
-    add_box_node(b, 'Door_Front_Glass', mat_dglass, (0.32, 0.7, 0.02), (dx, dh * 0.68, cz + 0.05), parent_children=door_children)
-    add_box_node(b, 'Door_Front_Hardware', mat_hw, (0.05, 0.05, 0.05), (dx + dw / 2 - 0.12, dh * 0.5, cz + 0.06), parent_children=door_children)
+    add_box_node(b, 'Door_Front_Glass', mat_dglass, (0.32, 0.7, 0.02), (dx, dh * 0.68, cz + 0.07), parent_children=door_children)
+    add_box_node(b, 'Door_Front_Hardware', mat_hw, (0.05, 0.05, 0.05), (dx + dw / 2 - 0.12, dh * 0.5, cz + 0.08), parent_children=door_children)
     add_box_node(b, 'Door_Front_Trim', mat_trim, (dw + 0.2, dh + 0.14, 0.10), (dx, dh / 2, cz - 0.05), parent_children=door_children)
     door_grp = add_empty_node(b, 'Door_Front', children=door_children)
     doors_grp = add_empty_node(b, 'Doors', children=[door_grp])
