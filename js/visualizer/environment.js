@@ -14,6 +14,24 @@ function cloneWithRepeat(tex, repeat) {
   return t;
 }
 
+// A soft radial-gradient "contact shadow" decal under the house footprint —
+// cheap grounding that reads as depth/weight without a real ambient-
+// occlusion pass. Sized generously (13x11) since all three house configs
+// currently share the same ~9x7 placeholder footprint; re-tune per house
+// once real, differently-sized models arrive.
+function buildContactShadowTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const ctx = c.getContext('2d');
+  const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0, 'rgba(0,0,0,0.4)');
+  grad.addColorStop(0.55, 'rgba(0,0,0,0.22)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(c);
+}
+
 export function buildEnvironment() {
   const group = new THREE.Group();
   group.name = 'Environment';
@@ -51,6 +69,14 @@ export function buildEnvironment() {
   walkway.position.set(1.15, 0.013, 6.4);
   walkway.receiveShadow = true;
   group.add(walkway);
+
+  const shadowMat = new THREE.MeshBasicMaterial({
+    map: buildContactShadowTexture(), transparent: true, depthWrite: false, toneMapped: false,
+  });
+  const contactShadow = new THREE.Mesh(new THREE.PlaneGeometry(13, 11), shadowMat);
+  contactShadow.rotation.x = -Math.PI / 2;
+  contactShadow.position.set(0, 0.008, 0);
+  group.add(contactShadow);
 
   const shrubMat = new THREE.MeshStandardMaterial({ color: 0x3c4a35, roughness: 0.95 });
   const shrubGeo = new THREE.IcosahedronGeometry(0.42, 1);

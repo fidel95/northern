@@ -56,8 +56,16 @@ function glassMaterial(option) {
     opacity: Math.max(option.opacity, 0.55),
     roughness: option.roughness,
     metalness: 0,
-    clearcoat: 0.35,
-    clearcoatRoughness: 0.15,
+    clearcoat: 0.6,
+    clearcoatRoughness: 0.08,
+    // No environment map (see lighting.js's comment on why — it silently
+    // broke on real GPUs), so the glass's "reflective" read has to come
+    // entirely from direct-light specular. Pushing specularIntensity to 1
+    // with a cool-white specularColor gives the sun a crisp, glassy
+    // highlight instead of the flatter default dielectric response.
+    specularIntensity: 1,
+    specularColor: new THREE.Color(0xf3f8fb),
+    ior: 1.52,
     envMapIntensity: 0.5,
     side: THREE.DoubleSide,
   });

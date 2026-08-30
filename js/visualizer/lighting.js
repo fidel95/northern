@@ -28,7 +28,7 @@ const SUN_PARAMS = {
   // default camera looks at) rather than backlighting it — azimuth is
   // measured the same way the camera's default angle is, see cameraRig.js.
   azimuth: 55,
-  exposure: 0.95,
+  exposure: 1.02,
 };
 
 function configureSky(sky, params) {
@@ -52,14 +52,23 @@ export function createLighting(renderer, scene) {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   // Slightly higher than before now that there's no environment map adding
-  // its own ambient contribution on top.
-  const ambient = new THREE.AmbientLight(0xffffff, 0.65);
+  // its own ambient contribution on top. Trimmed a touch further (0.65 ->
+  // 0.58) for more visible shadow depth around windows/trim — the earlier
+  // value read a little flat/shadowless in side-by-side comparisons.
+  const ambient = new THREE.AmbientLight(0xffffff, 0.58);
   scene.add(ambient);
 
   const sky = new Sky();
   sky.scale.setScalar(20000);
   const sunDir = configureSky(sky, SUN_PARAMS);
   scene.add(sky);
+
+  // A soft, sky-tinted fog well beyond the house (it's within ~15m of the
+  // camera; fog only starts biting past 35m) does two things cheaply: adds
+  // a little atmospheric depth so the house reads as sitting IN a scene
+  // rather than pasted onto a flat backdrop, and quietly hides the visible
+  // edge of the ground plane's 50m-radius circle against the sky.
+  scene.fog = new THREE.Fog(0xcbdce6, 35, 85);
 
   const sunLight = new THREE.DirectionalLight(0xfff2df, 2.0);
   sunLight.position.copy(sunDir).multiplyScalar(40);
