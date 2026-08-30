@@ -230,6 +230,12 @@ def build():
     WIDTH, DEPTH, WALL_H = 9.0, 7.0, 2.8
     OVERHANG = 0.35
     PITCH_DEG = 24
+    WALL_THICKNESS = 0.2
+    # Windows/doors sit against the wall's actual OUTER face
+    # (DEPTH/2 + WALL_THICKNESS/2), not DEPTH/2 itself — using DEPTH/2 as the
+    # base put their frames 4cm inside the wall volume, coincident with/
+    # inside the siding and z-fighting with it (the "door glitching").
+    FRONT_FACE = DEPTH / 2 + WALL_THICKNESS / 2
 
     mat_siding = b.get_material('MAT_Siding', (0.83, 0.80, 0.72), roughness=0.9)
     mat_roof = b.get_material('MAT_Roofing', (0.16, 0.16, 0.17), roughness=0.75)
@@ -242,14 +248,19 @@ def build():
     mat_hw = b.get_material('MAT_DoorHardware', (0.72, 0.64, 0.42), roughness=0.35, metallic=0.9)
 
     body_children = []
-    add_box_node(b, 'Body_Front', mat_siding, (WIDTH, WALL_H, 0.2), (0, WALL_H / 2, DEPTH / 2), parent_children=body_children)
-    add_box_node(b, 'Body_Back', mat_siding, (WIDTH, WALL_H, 0.2), (0, WALL_H / 2, -DEPTH / 2), parent_children=body_children)
-    add_box_node(b, 'Body_Left', mat_siding, (0.2, WALL_H, DEPTH), (-WIDTH / 2, WALL_H / 2, 0), parent_children=body_children)
-    add_box_node(b, 'Body_Right', mat_siding, (0.2, WALL_H, DEPTH), (WIDTH / 2, WALL_H / 2, 0), parent_children=body_children)
+    add_box_node(b, 'Body_Front', mat_siding, (WIDTH, WALL_H, WALL_THICKNESS), (0, WALL_H / 2, DEPTH / 2), parent_children=body_children)
+    add_box_node(b, 'Body_Back', mat_siding, (WIDTH, WALL_H, WALL_THICKNESS), (0, WALL_H / 2, -DEPTH / 2), parent_children=body_children)
+    add_box_node(b, 'Body_Left', mat_siding, (WALL_THICKNESS, WALL_H, DEPTH), (-WIDTH / 2, WALL_H / 2, 0), parent_children=body_children)
+    add_box_node(b, 'Body_Right', mat_siding, (WALL_THICKNESS, WALL_H, DEPTH), (WIDTH / 2, WALL_H / 2, 0), parent_children=body_children)
     body_grp = add_empty_node(b, 'Body', children=body_children)
 
     found_children = []
-    add_box_node(b, 'Foundation', mat_found, (WIDTH + 0.3, 0.5, DEPTH + 0.3), (0, -0.25, 0), parent_children=found_children)
+    # Top face sits 2cm ABOVE y=0 (not flush with it) so it interpenetrates
+    # the wall/door bottoms instead of sharing an exactly coincident plane —
+    # coincident coplanar faces z-fight (flicker/"glitch" as the camera
+    # moves) since the depth buffer can't consistently resolve which face
+    # is in front.
+    add_box_node(b, 'Foundation', mat_found, (WIDTH + 0.3, 0.54, DEPTH + 0.3), (0, -0.23, 0), parent_children=found_children)
     found_grp = add_empty_node(b, 'Foundation_Group', children=found_children)
 
     half_depth = DEPTH / 2 + OVERHANG
@@ -280,7 +291,7 @@ def build():
 
     def make_window(name, x, sill_y, w=1.15, h=1.25):
         children = []
-        cz = DEPTH / 2 + 0.06
+        cz = FRONT_FACE + 0.06
         add_box_node(b, f'{name}_Frame', mat_frame, (w + 0.16, h + 0.16, 0.10), (x, sill_y + h / 2, cz), parent_children=children)
         add_box_node(b, f'{name}_Glass', mat_glass, (w - 0.08, h - 0.08, 0.02), (x, sill_y + h / 2, cz + 0.05), parent_children=children)
         return add_empty_node(b, name, children=children)
@@ -294,11 +305,11 @@ def build():
 
     door_children = []
     dx, dw, dh = 1.15, 1.0, 2.05
-    cz = DEPTH / 2 + 0.06
+    cz = FRONT_FACE + 0.06
     add_box_node(b, 'Door_Front_Slab', mat_slab, (dw, dh, 0.08), (dx, dh / 2, cz), parent_children=door_children)
     add_box_node(b, 'Door_Front_Glass', mat_dglass, (0.32, 0.7, 0.02), (dx, dh * 0.68, cz + 0.05), parent_children=door_children)
     add_box_node(b, 'Door_Front_Hardware', mat_hw, (0.05, 0.05, 0.05), (dx + dw / 2 - 0.12, dh * 0.5, cz + 0.06), parent_children=door_children)
-    add_box_node(b, 'Door_Front_Trim', mat_trim, (dw + 0.2, dh + 0.14, 0.10), (dx, dh / 2, cz - 0.02), parent_children=door_children)
+    add_box_node(b, 'Door_Front_Trim', mat_trim, (dw + 0.2, dh + 0.14, 0.10), (dx, dh / 2, cz - 0.05), parent_children=door_children)
     door_grp = add_empty_node(b, 'Door_Front', children=door_children)
     doors_grp = add_empty_node(b, 'Doors', children=[door_grp])
 

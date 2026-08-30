@@ -9,7 +9,13 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export function createCameraRig(canvas) {
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 500);
+  // Scene content only ever lives within ~30m of the origin (minDistance
+  // 10 / maxDistance 24 below, plus the house's own extent) — a near/far of
+  // 0.1/500 gives the depth buffer a 5000:1 range to cover, which starves
+  // precision at the distances that matter and shows up as z-fighting
+  // (flickering) between close-together surfaces like the foundation/wall
+  // seam. 0.5/60 keeps precision where the camera actually is.
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.5, 60);
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
