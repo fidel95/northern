@@ -2,15 +2,20 @@
   var root = document.querySelector('[data-estimate]');
   if (!root) return;
 
+  // Windows: flat Good/Better/Best tiers — the single source of truth for
+  // window pricing site-wide. No per-style/per-option pricing anymore; every
+  // operating style, frame color, glass package, and grille is available
+  // within each tier (configured visually in the Visualizer), not priced
+  // separately.
+  var WINDOW_TIERS = [
+    { id: 'good', name: 'Good', price: 850, features: ['Professional installation included', '10-year warranty'] },
+    { id: 'better', name: 'Better', price: 1200, features: ['Professional installation included', '20-year warranty'], badge: 'Most Popular' },
+    { id: 'best', name: 'Best', price: 1600, features: ['Professional installation included', 'Lifetime warranty'] }
+  ];
+
+  // Patio and entry doors keep their existing per-option pricing model —
+  // out of scope for the window tier rework.
   var PRICING = {
-    windowStyles: [
-      { id: 'doublehung', name: 'Double-Hung', price: 525 },
-      { id: 'casement', name: 'Casement', price: 560 },
-      { id: 'awning', name: 'Awning', price: 540 },
-      { id: 'sliding', name: 'Sliding', price: 580 },
-      { id: 'picture', name: 'Picture', price: 495 },
-      { id: 'baybow', name: 'Bay & Bow', price: 2100 }
-    ],
     sizes: [
       { id: 'small', name: 'Small', sub: 'up to 3×4 ft', mult: 0.85 },
       { id: 'standard', name: 'Standard', sub: '~3×5 ft', mult: 1.0 },
@@ -27,11 +32,6 @@
       { id: 'standard', name: 'Standard Low-E', add: 0 },
       { id: 'triple', name: 'Triple-Pane Energy', add: 95 },
       { id: 'tinted', name: 'Tinted / Privacy', add: 60 }
-    ],
-    grilles: [
-      { id: 'none', name: 'None', add: 0 },
-      { id: 'colonial', name: 'Colonial Grid', add: 35 },
-      { id: 'craftsman', name: 'Craftsman', add: 45 }
     ],
     patioStyles: [
       { id: 'sliding', name: 'Sliding', price: 1450 },
@@ -61,7 +61,8 @@
 
   var state = {
     tab: 'windows',
-    win: { style: 'doublehung', size: 'standard', color: 'white', glass: 'standard', grille: 'none' },
+    win: { tier: 'better' },
+    winQty: 1,
     patio: { style: 'sliding', size: 'standard', color: 'white', glass: 'standard' },
     entry: { style: 'single', finish: 'paint', hardware: 'standard' },
     qty: 1,
@@ -71,15 +72,19 @@
   var els = {
     tabs: root.querySelector('.est-tabs'),
     groups: root.querySelector('.est-groups'),
+    qtyRow: root.querySelector('.est-qty-row'),
     qtyNum: root.querySelector('.est-qty-num'),
     unitLabel: root.querySelector('.est-unit-label'),
     unitPrice: root.querySelector('.est-unit-price'),
     addBtn: root.querySelector('.est-add-btn'),
+    note: root.querySelector('.est-note'),
     dec: root.querySelector('.est-qty-dec'),
     inc: root.querySelector('.est-qty-inc'),
+    cartHead: root.querySelector('.est-cart__head h2'),
     cartCount: root.querySelector('.est-cart__count'),
     cartBody: root.querySelector('.est-cart__body'),
     rangeBlock: root.querySelector('.est-cart__range'),
+    rangeLabel: root.querySelector('.est-cart__range-label'),
     rangeText: root.querySelector('.est-cart__range-value'),
     rangeNote: root.querySelector('.est-cart__range-note'),
     desc: document.getElementById('description-estimate')
@@ -87,12 +92,6 @@
 
   function unitPrice() {
     var t = state.tab;
-    if (t === 'windows') {
-      var w = state.win;
-      return find(PRICING.windowStyles, w.style).price * find(PRICING.sizes, w.size).mult
-        + find(PRICING.frameColors, w.color).add + find(PRICING.glass, w.glass).add
-        + find(PRICING.grilles, w.grille).add;
-    }
     if (t === 'patio') {
       var p = state.patio;
       return find(PRICING.patioStyles, p.style).price * find(PRICING.sizes, p.size).mult
@@ -103,7 +102,7 @@
       + find(PRICING.entryFinish, e.finish).add + find(PRICING.entryHardware, e.hardware).add;
   }
 
-  function noun() { return state.tab === 'windows' ? 'window' : state.tab === 'patio' ? 'patio door' : 'entry door'; }
+  function noun() { return state.tab === 'patio' ? 'patio door' : 'entry door'; }
 
   function makeOptBtn(o, bucket, key, activeId, kind) {
     var btn = document.createElement('button');
@@ -148,12 +147,7 @@
   function addToCart() {
     var unit = unitPrice();
     var title, meta;
-    if (state.tab === 'windows') {
-      var w = state.win;
-      title = find(PRICING.windowStyles, w.style).name + ' Window';
-      meta = [find(PRICING.sizes, w.size).name, find(PRICING.frameColors, w.color).name + ' frame',
-        find(PRICING.glass, w.glass).name, find(PRICING.grilles, w.grille).name + ' grille'].join(' · ');
-    } else if (state.tab === 'patio') {
+    if (state.tab === 'patio') {
       var p = state.patio;
       title = find(PRICING.patioStyles, p.style).name + ' Patio Door';
       meta = [find(PRICING.sizes, p.size).name, find(PRICING.frameColors, p.color).name + ' frame',
@@ -168,6 +162,118 @@
     render();
   }
 
+  // --- Windows: Good/Better/Best tier comparison -----------------------
+
+  function renderWindowsTiers() {
+    var wrap = document.createElement('div');
+    wrap.className = 'est-tiers';
+
+    WINDOW_TIERS.forEach(function (t) {
+      var selected = t.id === state.win.tier;
+      var card = document.createElement('div');
+      card.className = 'est-tier-card' + (selected ? ' is-selected' : '') + (t.badge ? ' est-tier-card--featured' : '');
+
+      if (t.badge) {
+        var badge = document.createElement('span');
+        badge.className = 'est-tier-card__badge';
+        badge.textContent = t.badge;
+        card.appendChild(badge);
+      }
+
+      var name = document.createElement('span');
+      name.className = 'est-tier-card__name';
+      name.textContent = t.name;
+      card.appendChild(name);
+
+      var price = document.createElement('div');
+      price.className = 'est-tier-card__price';
+      price.innerHTML = money(t.price) + '<small>/window</small>';
+      card.appendChild(price);
+
+      var feats = document.createElement('ul');
+      feats.className = 'est-tier-card__features';
+      t.features.forEach(function (f) {
+        var li = document.createElement('li');
+        li.textContent = f;
+        feats.appendChild(li);
+      });
+      card.appendChild(feats);
+
+      var total = document.createElement('div');
+      total.className = 'est-tier-card__total';
+      total.innerHTML = money(t.price * state.winQty) + ' <span>total for ' + state.winQty + (state.winQty === 1 ? ' window' : ' windows') + '</span>';
+      card.appendChild(total);
+
+      var selectBtn = document.createElement('button');
+      selectBtn.type = 'button';
+      selectBtn.className = 'est-tier-card__select';
+      selectBtn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      selectBtn.textContent = selected ? 'Selected' : 'Select ' + t.name;
+      selectBtn.addEventListener('click', function () {
+        state.win.tier = t.id;
+        render();
+      });
+      card.appendChild(selectBtn);
+
+      wrap.appendChild(card);
+    });
+
+    els.groups.appendChild(wrap);
+
+    var qtyRow = document.createElement('div');
+    qtyRow.className = 'est-qty-row est-qty-row--tiers';
+    qtyRow.innerHTML =
+      '<div><span class="est-qty-label">Number of windows</span>' +
+      '<div class="est-qty-controls">' +
+      '<button type="button" class="est-qty-btn" data-win-dec aria-label="Decrease number of windows">−</button>' +
+      '<span class="est-qty-num">' + state.winQty + '</span>' +
+      '<button type="button" class="est-qty-btn" data-win-inc aria-label="Increase number of windows">+</button>' +
+      '</div></div>';
+    els.groups.appendChild(qtyRow);
+    qtyRow.querySelector('[data-win-dec]').addEventListener('click', function () { state.winQty = Math.max(1, state.winQty - 1); render(); });
+    qtyRow.querySelector('[data-win-inc]').addEventListener('click', function () { state.winQty = Math.min(60, state.winQty + 1); render(); });
+
+    var disclaimer = document.createElement('p');
+    disclaimer.className = 'est-note est-tier-disclaimer';
+    disclaimer.textContent = 'Final pricing is confirmed after an on-site measurement.';
+    els.groups.appendChild(disclaimer);
+  }
+
+  function renderWindowsAside() {
+    var tier = find(WINDOW_TIERS, state.win.tier);
+    var total = tier.price * state.winQty;
+
+    els.cartHead.textContent = 'Your windows';
+    els.cartCount.textContent = state.winQty + (state.winQty === 1 ? ' WINDOW' : ' WINDOWS');
+
+    els.cartBody.innerHTML = '';
+    var row = document.createElement('div');
+    row.className = 'est-cart__item';
+    row.innerHTML =
+      '<div style="min-width:0"><strong class="est-cart__item-title">' + state.winQty + '&times; ' + tier.name + ' Tier Window' + (state.winQty === 1 ? '' : 's') + '</strong>' +
+      '<span class="est-cart__item-meta">' + tier.features.join(' · ') + ' · ' + money(tier.price) + ' each</span></div>' +
+      '<div class="est-cart__item-right"><span class="est-cart__item-sub">' + money(total) + '</span></div>';
+    els.cartBody.appendChild(row);
+
+    els.rangeBlock.style.display = '';
+    els.rangeLabel.textContent = 'YOUR TOTAL, INSTALLED';
+    els.rangeText.textContent = money(total);
+    els.rangeNote.textContent = 'Final pricing is confirmed after an on-site measurement.';
+  }
+
+  function updateDescriptionForWindows() {
+    if (!els.desc) return;
+    var tier = find(WINDOW_TIERS, state.win.tier);
+    var total = tier.price * state.winQty;
+    els.desc.value = 'INSTANT ESTIMATE\n' +
+      state.winQty + '× ' + tier.name + ' tier window' + (state.winQty === 1 ? '' : 's') + ' (' + money(tier.price) + '/window, ' + tier.features.join(' · ') + ')\n' +
+      'Estimated total: ' + money(total) + '\n' +
+      '(Final pricing is confirmed after an on-site measurement.)' +
+      (initialNote ? '\n\n' + initialNote : '');
+  }
+
+  // --- Shared render ------------------------------------------------------
+
   function render() {
     els.tabs.querySelectorAll('.est-tab').forEach(function (btn) {
       var on = btn.getAttribute('data-tab') === state.tab;
@@ -175,14 +281,25 @@
     });
 
     els.groups.innerHTML = '';
+
     if (state.tab === 'windows') {
-      var w = state.win;
-      els.groups.appendChild(group('Operating style', PRICING.windowStyles, w.style, 'win', 'style'));
-      els.groups.appendChild(group('Size class', PRICING.sizes, w.size, 'win', 'size', 'size'));
-      els.groups.appendChild(group('Frame color', PRICING.frameColors, w.color, 'win', 'color'));
-      els.groups.appendChild(group('Glass package', PRICING.glass, w.glass, 'win', 'glass'));
-      els.groups.appendChild(group('Grille pattern', PRICING.grilles, w.grille, 'win', 'grille'));
-    } else if (state.tab === 'patio') {
+      renderWindowsTiers();
+      els.qtyRow.style.display = 'none';
+      els.addBtn.style.display = 'none';
+      els.note.style.display = 'none';
+      renderWindowsAside();
+      updateDescriptionForWindows();
+      return;
+    }
+
+    els.qtyRow.style.display = '';
+    els.addBtn.style.display = '';
+    els.note.style.display = '';
+    els.note.textContent = 'PRICING NOTE — door figures are illustrative placeholders pending the real cost book. Replace PRICING in js/estimate.js before launch.';
+    els.cartHead.textContent = 'Your project';
+    els.rangeLabel.textContent = 'ESTIMATED RANGE, INSTALLED';
+
+    if (state.tab === 'patio') {
       var p = state.patio;
       els.groups.appendChild(group('Door type', PRICING.patioStyles, p.style, 'patio', 'style'));
       els.groups.appendChild(group('Size class', PRICING.sizes, p.size, 'patio', 'size', 'size'));
@@ -205,7 +322,7 @@
     if (!state.cart.length) {
       var empty = document.createElement('p');
       empty.className = 'est-cart__empty';
-      empty.textContent = 'Nothing added yet. Configure an opening on the left and add it — you can mix windows and doors in one estimate.';
+      empty.textContent = 'Nothing added yet. Configure an opening on the left and add it — you can mix patio and entry doors in one estimate.';
       els.cartBody.appendChild(empty);
     } else {
       state.cart.forEach(function (c) {
@@ -265,25 +382,18 @@
   var style = params.get('style');
   var color = params.get('color');
   var glass = params.get('glass');
-  var grille = params.get('grille');
   initialNote = params.get('note') || '';
 
   if (tab === 'windows' || tab === 'patio' || tab === 'entry') state.tab = tab;
   if (style) {
-    if (PRICING.windowStyles.some(function (s) { return s.id === style; })) { state.tab = 'windows'; state.win.style = style; }
-    else if (PRICING.patioStyles.some(function (s) { return s.id === style; })) { state.tab = 'patio'; state.patio.style = style; }
+    if (PRICING.patioStyles.some(function (s) { return s.id === style; })) { state.tab = 'patio'; state.patio.style = style; }
     else if (PRICING.entryStyles.some(function (s) { return s.id === style; })) { state.tab = 'entry'; state.entry.style = style; }
   }
-  if (color && PRICING.frameColors.some(function (c) { return c.id === color; })) {
-    if (state.tab === 'windows') state.win.color = color;
-    else if (state.tab === 'patio') state.patio.color = color;
+  if (color && PRICING.frameColors.some(function (c) { return c.id === color; }) && state.tab === 'patio') {
+    state.patio.color = color;
   }
-  if (glass && PRICING.glass.some(function (g) { return g.id === glass; })) {
-    if (state.tab === 'windows') state.win.glass = glass;
-    else if (state.tab === 'patio') state.patio.glass = glass;
-  }
-  if (grille && state.tab === 'windows' && PRICING.grilles.some(function (g) { return g.id === grille; })) {
-    state.win.grille = grille;
+  if (glass && PRICING.glass.some(function (g) { return g.id === glass; }) && state.tab === 'patio') {
+    state.patio.glass = glass;
   }
 
   render();
