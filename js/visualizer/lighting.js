@@ -44,11 +44,14 @@ function configureSky(sky, params) {
   return sunDir;
 }
 
-export function createLighting(renderer, scene) {
+export function createLighting(renderer, scene, { shadows = true, shadowMapSize = 1024 } = {}) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = SUN_PARAMS.exposure;
-  renderer.shadowMap.enabled = true;
+  // Shadows are the single most expensive thing this scene does (a whole
+  // extra depth-only render pass every frame) — low-tier devices skip them
+  // entirely via performance.js's tiering rather than just shrinking the map.
+  renderer.shadowMap.enabled = shadows;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   // Slightly higher than before now that there's no environment map adding
@@ -73,11 +76,11 @@ export function createLighting(renderer, scene) {
   const sunLight = new THREE.DirectionalLight(0xfff2df, 2.0);
   sunLight.position.copy(sunDir).multiplyScalar(40);
   sunLight.target.position.set(0, 1, 0);
-  sunLight.castShadow = true;
-  // 1024 rather than 2048 — PCFSoftShadowMap already softens the edges, and
-  // a smaller shadow map matters more on phone GPUs than the extra crispness
-  // does at this scene scale.
-  sunLight.shadow.mapSize.set(1024, 1024);
+  sunLight.castShadow = shadows;
+  // 1024 (or performance.js's smaller tiers) rather than 2048 — PCFSoftShadowMap
+  // already softens the edges, and a smaller shadow map matters more on phone
+  // GPUs than the extra crispness does at this scene scale.
+  sunLight.shadow.mapSize.set(shadowMapSize, shadowMapSize);
   sunLight.shadow.camera.left = -14;
   sunLight.shadow.camera.right = 14;
   sunLight.shadow.camera.top = 14;
