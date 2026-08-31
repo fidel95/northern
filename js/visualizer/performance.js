@@ -16,11 +16,18 @@ export function detectPerformanceTier() {
   // rather than penalizing browsers that don't expose it.
   const mem = navigator.deviceMemory;
   const isSmallScreen = Math.min(window.innerWidth, window.innerHeight) < 500;
+  // iOS Safari never exposes deviceMemory, so every iPhone/iPad fell into
+  // the "unknown" mem branch below regardless of how capable the device
+  // actually is — that alone was enough to keep current-generation iPhones
+  // (better GPUs than most laptops) stuck in the 'low' tier. Give iOS its
+  // own "known capable" branch instead of treating it as an unknown.
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
   let score = 0;
   if (!isCoarsePointer) score += 2; // real mouse/trackpad strongly correlates with a real desktop GPU
   if (cores >= 8) score += 2; else if (cores >= 4) score += 1;
-  if (mem != null) { if (mem >= 8) score += 2; else if (mem >= 4) score += 1; } else { score += 1; }
+  if (mem != null) { if (mem >= 8) score += 2; else if (mem >= 4) score += 1; } else if (isIOS) { score += 2; } else { score += 1; }
   if (!isSmallScreen) score += 1;
 
   const tier = score >= 6 ? 'high' : score >= 3 ? 'medium' : 'low';

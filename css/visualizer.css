@@ -22,6 +22,8 @@
 .viz-compare-toggle:hover { border-color: var(--text-accent); color: var(--text-accent); }
 .viz-compare-toggle[aria-pressed="true"] { background: var(--surface-accent); color: var(--text-on-accent); border-color: var(--surface-accent); }
 .viz-compare-toggle[aria-pressed="true"]:hover { background: var(--state-hover-accent); border-color: var(--state-hover-accent); }
+.viz-compare-toggle:disabled { opacity: 0.4; cursor: not-allowed; }
+.viz-compare-toggle:disabled:hover { border-color: var(--line-strong); color: var(--text-strong); }
 
 .viz-compare { position: absolute; inset: 0; z-index: 18; pointer-events: none; }
 .viz-compare[hidden] { display: none; }

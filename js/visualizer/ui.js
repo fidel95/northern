@@ -3,8 +3,20 @@
 // this module works the same whether the 3D scene is ready or still
 // loading.
 
-import { products, houseConfigurations, optionById } from './config.js';
+import {
+  products, houseConfigurations, optionById, DEFAULT_SELECTIONS,
+} from './config.js';
 import { CATEGORIES, categoryLabel } from './categories.js';
+
+// 'house' (which base model is loaded) isn't a material choice, so switching
+// it alone shouldn't count as "customized" for Compare purposes — the
+// before/after split only ever differs by siding/roofing/trim/window/door
+// selections (see compareMode.js's buildBeforeHouse).
+function hasCustomizations(selections) {
+  return Object.keys(DEFAULT_SELECTIONS).some(
+    (key) => key !== 'house' && selections[key] !== DEFAULT_SELECTIONS[key],
+  );
+}
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -212,10 +224,15 @@ export function createUI(root, {
 
     // Before/After only makes sense against the live 3D model, not the
     // hand-traced photo overlay — drop out of compare rather than leave a
-    // dead control up when the customer switches to "My Home".
-    refs.compareToggle.disabled = state.mode !== '3d';
+    // dead control up when the customer switches to "My Home". It's also a
+    // no-op until something differs from the stock defaults ("before" is
+    // always the stock house — see compareMode.js) — disable it rather than
+    // let the customer toggle it into two identical halves.
+    const customized = hasCustomizations(state.selections);
+    refs.compareToggle.disabled = state.mode !== '3d' || !customized;
     refs.compareToggle.hidden = state.mode !== '3d';
-    if (state.mode !== '3d' && compareOn) setCompareOn(false);
+    refs.compareToggle.title = customized ? '' : 'Customize the house first to compare before/after';
+    if ((state.mode !== '3d' || !customized) && compareOn) setCompareOn(false);
 
     renderHomes();
     renderCategoryList();
