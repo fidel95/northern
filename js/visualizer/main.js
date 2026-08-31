@@ -95,8 +95,8 @@ function init() {
     scene.add(buildEnvironment());
     diagnostics.log('environment (ground/driveway) added');
 
-    fitRendererToContainer(renderer, rig.camera, canvasWrap);
-    const resizeObserver = new ResizeObserver(() => fitRendererToContainer(renderer, rig.camera, canvasWrap));
+    fitRendererToContainer(renderer, rig.camera, canvasWrap, tier.pixelRatioCap);
+    const resizeObserver = new ResizeObserver(() => fitRendererToContainer(renderer, rig.camera, canvasWrap, tier.pixelRatioCap));
     resizeObserver.observe(canvasWrap);
 
     // Compare (before/after) is transient render state, not a "selection" —

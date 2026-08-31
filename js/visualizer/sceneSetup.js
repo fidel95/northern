@@ -27,9 +27,15 @@ export function createScene() {
   return scene;
 }
 
-export function fitRendererToContainer(renderer, camera, container) {
+export function fitRendererToContainer(renderer, camera, container, pixelRatioCap = 2) {
   const { clientWidth: w, clientHeight: h } = container;
   if (w === 0 || h === 0) return;
+  // Browser page-zoom (ctrl/cmd +/-) changes window.devicePixelRatio without
+  // a page reload, and this fires on every resize (zoom included) via the
+  // caller's ResizeObserver — re-reading it here keeps the canvas sharp at
+  // 80%/125%/150% zoom instead of staying locked to whatever ratio was
+  // current at init.
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, pixelRatioCap));
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
