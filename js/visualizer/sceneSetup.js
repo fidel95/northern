@@ -4,10 +4,10 @@
 
 import * as THREE from 'three';
 
-export function createRenderer(canvas) {
+export function createRenderer(canvas, { antialias = true, pixelRatioCap = 2 } = {}) {
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: true,
+    antialias,
     alpha: false,
     powerPreference: 'high-performance',
     // Needed for the Snapshot feature (screenshot.js reads the canvas back
@@ -15,7 +15,10 @@ export function createRenderer(canvas) {
     // to choreograph a read on the exact frame after render.
     preserveDrawingBuffer: true,
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  // antialias can't be toggled after context creation (it's a WebGL context
+  // attribute), which is why it's a constructor option here rather than a
+  // property set afterward like pixelRatio.
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, pixelRatioCap));
   return renderer;
 }
 

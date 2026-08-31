@@ -13,8 +13,16 @@
 
 import * as THREE from 'three';
 
-const SIZE = 512;
+// Mutable (not const) so main.js can lower it once, before any texture gets
+// generated, on low-tier devices — every build* function below reads it at
+// call time via canvas()'s default, so nothing else here needs to change.
+let SIZE = 512;
 const cache = new Map();
+
+// Must be called (if at all) before the first getXTexture() call — textures
+// are generated once and cached, so changing SIZE after the cache has
+// entries would only affect textures generated from that point on.
+export function setTextureQuality(size) { SIZE = size; }
 
 function canvas(size = SIZE) {
   const c = document.createElement('canvas');

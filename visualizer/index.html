@@ -90,9 +90,9 @@
 
     <div class="viz-main" data-viz3d-main>
       <div class="viz-toolbar">
-        <div class="viz-modetabs">
-          <button type="button" class="viz-modetab" data-viz3d-modetab="3d" aria-selected="true">3D Home</button>
-          <button type="button" class="viz-modetab" data-viz3d-modetab="photo" aria-selected="false">My Home</button>
+        <div class="viz-modetabs" role="tablist" aria-label="Visualizer mode">
+          <button type="button" class="viz-modetab" role="tab" data-viz3d-modetab="3d" aria-selected="true">3D Home</button>
+          <button type="button" class="viz-modetab" role="tab" data-viz3d-modetab="photo" aria-selected="false">My Home</button>
         </div>
 
         <button type="button" class="viz-compare-toggle" data-viz3d-comparetoggle aria-pressed="false">
@@ -114,14 +114,16 @@
           </div>
         </div>
 
-        <div class="viz3d-loading" data-viz3d-loading>
+        <div class="viz3d-loading" data-viz3d-loading role="status" aria-live="polite">
           <span class="viz3d-loading__word">Northern Pines</span>
           <span class="viz3d-loading__sub" data-viz3d-loadsub>Preparing your home&hellip;</span>
           <div class="viz3d-loading__track"><div class="viz3d-loading__fill" data-viz3d-loadfill></div></div>
+          <button type="button" class="viz3d-loading__reload" data-viz3d-reload hidden>Reload Viewer</button>
         </div>
 
         <div class="viz3d-fallback" data-viz3d-fallback hidden>
           <p>Your browser doesn&rsquo;t support the 3D home visualizer.<br>Please try Chrome, Safari, Edge, or Firefox on a modern device.</p>
+          <p class="viz3d-fallback__note">You can still browse styles and get pricing in the <a href="/estimate/">estimate tool</a> without the 3D preview.</p>
         </div>
 
         <div class="viz3d-hud" data-viz3d-hud hidden>

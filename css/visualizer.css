@@ -94,16 +94,25 @@
 .viz3d-loading__fill { height: 100%; width: 0%; background: #e9ee1b; transition: width 0.25s ease; }
 .viz3d-loading.is-error .viz3d-loading__word { color: var(--text-muted); }
 .viz3d-loading.is-error .viz3d-loading__sub { color: #d4d4d2; max-width: 360px; text-wrap: pretty; }
-.viz3d-loading.is-reloadable { cursor: pointer; }
+.viz3d-loading__reload {
+  min-height: 44px; padding: 0 20px; margin-top: 4px; border: 1px solid #e9ee1b; background: transparent;
+  color: #e9ee1b; border-radius: var(--radius-xs); cursor: pointer;
+  font-family: var(--font-label); font-weight: 700; font-size: 11px; letter-spacing: var(--track-label); text-transform: uppercase;
+  transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+.viz3d-loading__reload:hover { background: #e9ee1b; color: #090909; }
+.viz3d-loading__reload[hidden] { display: none; }
 
-.viz3d-fallback { position: absolute; inset: 0; z-index: 25; display: flex; align-items: center; justify-content: center; background: #0d0d0e; padding: 32px; text-align: center; }
+.viz3d-fallback { position: absolute; inset: 0; z-index: 25; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: #0d0d0e; padding: 32px; text-align: center; }
 .viz3d-fallback[hidden] { display: none; }
-.viz3d-fallback p { font-size: 15px; color: var(--text-muted); line-height: 1.7; max-width: 360px; }
+.viz3d-fallback p { font-size: 15px; color: var(--text-muted); line-height: 1.7; max-width: 360px; margin: 0; }
+.viz3d-fallback__note { font-size: 13px !important; }
+.viz3d-fallback__note a { color: #e9ee1b; }
 
 .viz3d-hud { position: absolute; right: 12px; bottom: 12px; z-index: 15; }
 .viz3d-hud[hidden] { display: none; }
 .viz3d-hud-btn {
-  min-height: 40px; padding: 0 14px; border: 1px solid rgba(234,234,232,.22); background: rgba(13,13,14,0.72);
+  min-height: 44px; padding: 0 14px; border: 1px solid rgba(234,234,232,.22); background: rgba(13,13,14,0.72);
   backdrop-filter: blur(6px); color: #eaeae8; border-radius: 2px; cursor: pointer;
   font-family: var(--font-label); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
 }
@@ -187,7 +196,11 @@
 .viz-modetab:focus-visible,
 .viz-compare-toggle:focus-visible,
 .viz-btn-outline:focus-visible,
-.viz-btn-solid:focus-visible {
+.viz-btn-solid:focus-visible,
+.viz3d-hud-btn:focus-visible,
+.viz3d-loading__reload:focus-visible,
+.viz-present-exit:focus-visible,
+.viz-upload-btn:focus-visible {
   outline: 2px solid var(--state-focus-ring); outline-offset: 2px;
 }
 .viz-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
