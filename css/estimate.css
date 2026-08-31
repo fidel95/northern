@@ -43,3 +43,22 @@
 .est-cart__range-note { font-size: 13px; color: var(--text-muted); margin: 12px 0 0; line-height: 1.6; }
 .est-cart__range a.btn-lg { width: 100%; justify-content: center; margin-top: 18px; }
 .est-cart__range a.btn-md { width: 100%; justify-content: center; margin-top: 10px; }
+
+.est-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 16px; margin-bottom: 24px; }
+.est-tier-card { position: relative; display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--line-strong); border-radius: var(--radius-xs); padding: 22px 20px 20px; background: var(--surface-card); }
+.est-tier-card--featured { border-color: var(--acid-300); box-shadow: 0 0 0 1px var(--acid-300); }
+.est-tier-card.is-selected { background: var(--surface-accent-muted); }
+.est-tier-card__badge { position: absolute; top: -12px; left: 20px; background: var(--acid-300); color: var(--surface-inset); font-family: var(--font-label); font-size: 10.5px; font-weight: 700; letter-spacing: var(--track-label); text-transform: uppercase; padding: 5px 10px; border-radius: 999px; }
+.est-tier-card__name { font-family: var(--font-label); font-size: 12.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.est-tier-card__price { font-family: var(--font-display); font-weight: 800; font-stretch: 118%; text-transform: uppercase; letter-spacing: -0.02em; font-size: 30px; color: var(--text-strong); line-height: 1; }
+.est-tier-card__price small { font-family: var(--font-label); font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--text-muted); }
+.est-tier-card__features { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.est-tier-card__features li { font-size: 13.5px; color: var(--text-body); line-height: 1.5; padding-left: 20px; position: relative; }
+.est-tier-card__features li::before { content: ""; position: absolute; left: 0; top: 6px; width: 9px; height: 9px; border-radius: 999px; background: var(--acid-300); }
+.est-tier-card__total { font-family: var(--font-label); font-size: 12.5px; color: var(--text-strong); font-weight: 700; border-top: 1px solid var(--line-hairline); padding-top: 12px; }
+.est-tier-card__total span { display: block; font-weight: 400; color: var(--text-muted); text-transform: none; letter-spacing: 0; margin-top: 2px; }
+.est-tier-card__select { width: 100%; text-align: center; font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); font-size: 12px; padding: 13px 14px; border: 1px solid var(--line-strong); border-radius: var(--radius-xs); background: transparent; color: var(--text-strong); cursor: pointer; }
+.est-tier-card__select[aria-pressed="true"] { background: var(--surface-accent); border-color: var(--surface-accent); color: var(--text-on-accent); }
+
+.est-qty-row--tiers { justify-content: flex-start; border-top: none; }
+.est-tier-disclaimer { border-top: 1px solid var(--line-hairline); padding-top: 14px; }
