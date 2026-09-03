@@ -5,6 +5,7 @@
 
 import * as THREE from 'three';
 import { getGrassTexture, getConcreteTexture, applyRepeat } from './textures.js';
+import { MATTE_ENV_INTENSITY } from './materials.js';
 
 function cloneWithRepeat(tex, repeat) {
   if (!tex) return null;
@@ -78,6 +79,7 @@ export function buildEnvironment() {
     map: cloneWithRepeat(grass.map, { x: 26, y: 26 }),
     roughnessMap: cloneWithRepeat(grass.roughnessMap, { x: 26, y: 26 }),
     roughness: grass.roughnessMap ? 1 : 0.95,
+    envMapIntensity: MATTE_ENV_INTENSITY,
   });
   const ground = new THREE.Mesh(new THREE.CircleGeometry(50, 48), groundMat);
   ground.rotation.x = -Math.PI / 2;
@@ -89,6 +91,7 @@ export function buildEnvironment() {
     map: cloneWithRepeat(concrete.map, { x: 2, y: 5 }),
     normalMap: cloneWithRepeat(concrete.normalMap, { x: 2, y: 5 }),
     roughness: 0.92,
+    envMapIntensity: MATTE_ENV_INTENSITY,
   });
   driveway = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 11), driveMat);
   driveway.rotation.x = -Math.PI / 2;
@@ -100,6 +103,7 @@ export function buildEnvironment() {
     map: cloneWithRepeat(concrete.map, { x: 1, y: 4 }),
     normalMap: cloneWithRepeat(concrete.normalMap, { x: 1, y: 4 }),
     roughness: 0.92,
+    envMapIntensity: MATTE_ENV_INTENSITY,
   });
   walkway = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 5.2), walkMat);
   walkway.rotation.x = -Math.PI / 2;
@@ -115,7 +119,7 @@ export function buildEnvironment() {
   contactShadow.position.set(0, 0.008, 0);
   group.add(contactShadow);
 
-  const shrubMat = new THREE.MeshStandardMaterial({ color: 0x3c4a35, roughness: 0.95 });
+  const shrubMat = new THREE.MeshStandardMaterial({ color: 0x3c4a35, roughness: 0.95, envMapIntensity: MATTE_ENV_INTENSITY });
   const shrubGeo = new THREE.IcosahedronGeometry(0.42, 1);
   shrubs = [];
   const shrubSpots = [[-4.0, 4.05], [-1.7, 4.05], [2.6, 4.05], [4.3, 4.05]];

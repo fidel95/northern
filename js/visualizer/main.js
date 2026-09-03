@@ -7,7 +7,7 @@ import {
   createRenderer, createScene, fitRendererToContainer, createRenderLoop, disposeObject3D, watchContextLoss,
 } from './sceneSetup.js';
 import { createCameraRig } from './cameraRig.js';
-import { createLighting } from './lighting.js';
+import { createLighting, loadHDRIEnvironment } from './lighting.js';
 import { buildEnvironment, setHouseFootprint } from './environment.js';
 import { loadHouse } from './houseLoader.js';
 import { HouseMaterialController } from './materials.js';
@@ -244,11 +244,34 @@ function init() {
       hud.hidden = false;
       hideLoading();
       diagnostics.log(`ready — canvas ${canvas.width}x${canvas.height}, dpr ${window.devicePixelRatio}`);
+      ensureEnvironment();
     } catch (err) {
       console.error('[visualizer] house load failed:', err);
       diagnostics.log(`house load failed: ${err && err.message ? err.message : err}`);
       showError("This home couldn't be loaded. Try refreshing, or pick a different demo home.");
     }
+  }
+
+  // Reflections in glass and door hardware, from the HDRI in
+  // visualizer/environments/. Deliberately kicked off only once a house is on
+  // screen, and never awaited: it's a ~1.2MB download whose only job is to
+  // make windows read as glass, so it must not delay first paint and it is
+  // allowed to quietly not happen. Low-tier devices skip it outright — they
+  // are the ones least able to afford the download and the prefilter pass,
+  // and the ones the original PMREM failure was found on.
+  let environmentRequested = false;
+  function ensureEnvironment() {
+    if (environmentRequested || tier.tier === 'low') return;
+    environmentRequested = true;
+    loadHDRIEnvironment(
+      renderer,
+      'environments/kloofendal-clear-sky-1k.hdr',
+      (msg) => diagnostics.log(msg),
+    ).then((env) => {
+      if (!env) return;
+      scene.environment = env.texture;
+      scene.environmentIntensity = env.intensity;
+    });
   }
 
   // --- Photo mode -----------------------------------------------------

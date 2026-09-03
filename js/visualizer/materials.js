@@ -15,6 +15,20 @@ import * as THREE from 'three';
 import { MAT, optionById } from './config.js';
 import { getSidingTexture, getRoofingTexture, getTrimTexture } from './textures.js';
 
+// How much of the environment map a MATTE surface takes, versus the much
+// larger weights on glass and metal below.
+//
+// The gap between them is this wide because the HDRI in
+// visualizer/environments/ is a real photographic capture stored in physical
+// radiance units, where a clear sky sits several times brighter than the
+// artificial ambient light lighting.js uses to stand in for it. Weighting
+// siding anywhere near 1 therefore doesn't tint the house, it relights it:
+// the sandstone goes white, the charcoal roof goes grey, and every bit of
+// shadow contrast the direct lighting was tuned for disappears. Matte
+// surfaces want a trace for the sky tint in their shadows; a window wants to
+// genuinely reflect the sky.
+export const MATTE_ENV_INTENSITY = 0.16;
+
 function worldExtents(mesh) {
   const box = new THREE.Box3().setFromObject(mesh);
   const size = box.getSize(new THREE.Vector3());
@@ -44,7 +58,8 @@ function texturedMaterial(base, extraProps = {}) {
     map: base.map, normalMap: base.normalMap, roughnessMap: base.roughnessMap,
     roughness: base.roughnessMap ? 1 : (extraProps.roughness ?? 0.85),
     metalness: 0,
-    envMapIntensity: 0.7,
+    // Deliberately tiny — see MATTE_ENV_INTENSITY.
+    envMapIntensity: MATTE_ENV_INTENSITY,
     ...extraProps,
   });
 }
@@ -58,15 +73,17 @@ function glassMaterial(option) {
     metalness: 0,
     clearcoat: 0.6,
     clearcoatRoughness: 0.08,
-    // No environment map (see lighting.js's comment on why — it silently
-    // broke on real GPUs), so the glass's "reflective" read has to come
-    // entirely from direct-light specular. Pushing specularIntensity to 1
-    // with a cool-white specularColor gives the sun a crisp, glassy
-    // highlight instead of the flatter default dielectric response.
+    // The crisp direct-light specular here carries the whole "this is glass"
+    // read on devices that never get an environment map (low tier, or an HDRI
+    // that failed validation), so it stays either way. The environment
+    // weighting is orders of magnitude above the matte surfaces' because a
+    // window reflecting the sky is the entire point of loading the HDRI, and
+    // a mirror-like reflection is supposed to be about as bright as what it
+    // reflects.
     specularIntensity: 1,
     specularColor: new THREE.Color(0xf3f8fb),
     ior: 1.52,
-    envMapIntensity: 0.5,
+    envMapIntensity: 0.9,
     side: THREE.DoubleSide,
   });
 }
@@ -76,12 +93,19 @@ function hardwareMaterial(option) {
     color: new THREE.Color(option.color),
     roughness: option.roughness,
     metalness: option.metalness,
-    envMapIntensity: 1,
+    // Metal, unlike everything else on the house, is almost entirely
+    // reflection — a matte-black or brass handle with nothing to reflect just
+    // reads as flat plastic.
+    envMapIntensity: 0.8,
   });
 }
 
+// Frames, sashes, grille bars and door slabs — matte painted surfaces, so the
+// same low environment weighting as siding.
 function flatMaterial(colorHex, roughness) {
-  return new THREE.MeshStandardMaterial({ color: new THREE.Color(colorHex), roughness, metalness: 0, envMapIntensity: 0.6 });
+  return new THREE.MeshStandardMaterial({
+    color: new THREE.Color(colorHex), roughness, metalness: 0, envMapIntensity: MATTE_ENV_INTENSITY,
+  });
 }
 
 // --- mesh collection -------------------------------------------------------
