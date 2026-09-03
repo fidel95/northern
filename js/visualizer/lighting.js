@@ -66,12 +66,15 @@ export function createLighting(renderer, scene, { shadows = true, shadowMapSize 
   const sunDir = configureSky(sky, SUN_PARAMS);
   scene.add(sky);
 
-  // A soft, sky-tinted fog well beyond the house (it's within ~15m of the
-  // camera; fog only starts biting past 35m) does two things cheaply: adds
-  // a little atmospheric depth so the house reads as sitting IN a scene
-  // rather than pasted onto a flat backdrop, and quietly hides the visible
-  // edge of the ground plane's 50m-radius circle against the sky.
-  scene.fog = new THREE.Fog(0xcbdce6, 35, 85);
+  // A soft, sky-tinted fog well beyond the house does two things cheaply:
+  // adds atmospheric depth so the house reads as sitting IN a scene rather
+  // than pasted onto a flat backdrop, and hides the edge of the ground
+  // plane's 50m-radius circle against the sky. The band has to clear the
+  // house at one end and finish before the camera's 60m far plane at the
+  // other: the furthest a house corner ever gets is ~37m (the colonial's
+  // 30m maxDistance plus its own extent), and full fog by 58m means the far
+  // plane clips only pixels that are already 100% sky-coloured.
+  scene.fog = new THREE.Fog(0xcbdce6, 38, 58);
 
   const sunLight = new THREE.DirectionalLight(0xfff2df, 2.0);
   sunLight.position.copy(sunDir).multiplyScalar(40);

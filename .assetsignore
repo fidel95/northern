@@ -15,3 +15,13 @@ bun.lockb
 .gitattributes
 .editorconfig
 README.md
+
+# Source and documentation for the visualizer's demo-home models — the .glb
+# files they produce ship, the tools that produce them don't.
+visualizer/models/*.py
+visualizer/models/ASSET-SPEC.md
+
+# Design handoff material, kept in the repo but not part of the site.
+prototype-files-needed
+*.zip
+northern-pines-website-build-prompt.md

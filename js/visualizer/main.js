@@ -8,7 +8,7 @@ import {
 } from './sceneSetup.js';
 import { createCameraRig } from './cameraRig.js';
 import { createLighting } from './lighting.js';
-import { buildEnvironment } from './environment.js';
+import { buildEnvironment, setHouseFootprint } from './environment.js';
 import { loadHouse } from './houseLoader.js';
 import { HouseMaterialController } from './materials.js';
 import { houseConfigurations } from './config.js';
@@ -218,7 +218,29 @@ function init() {
       raycastTargets = [];
       houseGroup.traverse((o) => { if (o.isMesh) raycastTargets.push(o); });
 
-      rig.setDefaultView(cfg.cameraDistance, cfg.cameraHeight);
+      // Frame the camera and re-lay the yard from the model's ACTUAL
+      // world-space bounds rather than from numbers in config.js alone: the
+      // three houses differ in width, depth and ridge height, and the
+      // craftsman's porch pushes its front face 2.4m further toward the
+      // street than its front wall.
+      const bounds = new THREE.Box3().setFromObject(houseGroup);
+      const span = bounds.getSize(new THREE.Vector3());
+      // Where the front walk should meet the house. Read off the model's own
+      // Door_Front node rather than duplicated in config.js, so the walkway
+      // lands at the door on any GLB that follows ASSET-SPEC.md's node names.
+      // Measured from the door subtree's BOUNDS, not the node's own position:
+      // ASSET-SPEC.md's Door_Front is a grouping empty, and in these models it
+      // sits at the origin with the offset carried on its child meshes — so
+      // reading its translation put the front walk at the centre of the house
+      // regardless of where the entry actually is.
+      const doorNode = houseGroup.getObjectByName('Door_Front');
+      const doorX = doorNode
+        ? new THREE.Box3().setFromObject(doorNode).getCenter(new THREE.Vector3()).x
+        : bounds.min.x + span.x / 2;
+      setHouseFootprint({
+        width: span.x, depth: span.z, doorX, minX: bounds.min.x, maxX: bounds.max.x, maxZ: bounds.max.z,
+      });
+      rig.frameHouse(bounds);
       hud.hidden = false;
       hideLoading();
       diagnostics.log(`ready — canvas ${canvas.width}x${canvas.height}, dpr ${window.devicePixelRatio}`);
