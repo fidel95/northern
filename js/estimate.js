@@ -54,6 +54,30 @@
     ]
   };
 
+  // The visualizer configures window options the tiers include but don't price
+  // separately (see WINDOW_TIERS above). These map its option ids onto the
+  // names it shows, so the estimate can repeat the customer's choices back in
+  // the same words rather than silently dropping them — which is what happened
+  // before, since the URL params were only ever read for the patio tab.
+  var VISUALIZER_LABELS = {
+    style: { doublehung: 'Double Hung', casement: 'Casement', picture: 'Picture', slider: 'Slider' },
+    color: { white: 'White', black: 'Black', bronze: 'Bronze', gray: 'Stone Gray' },
+    glass: { clear: 'Clear', lowe: 'Low-E', obscure: 'Obscure' },
+    grille: { none: 'No grilles', sixoversix: '6-over-6 grilles', prairie: 'Prairie grilles' }
+  };
+  var VISUALIZER_SUFFIX = { color: ' frame', glass: ' glass' };
+
+  function visualizerSpecLine() {
+    var v = state.win.fromVisualizer;
+    if (!v) return '';
+    var parts = [];
+    ['style', 'color', 'glass', 'grille'].forEach(function (key) {
+      var label = VISUALIZER_LABELS[key][v[key]];
+      if (label) parts.push(label + (VISUALIZER_SUFFIX[key] || ''));
+    });
+    return parts.join(' · ');
+  }
+
   var RANGE_SPREAD = 12;
   var initialNote = '';
   var money = function (n) { return '$' + Math.round(n).toLocaleString('en-US'); };
@@ -61,7 +85,7 @@
 
   var state = {
     tab: 'windows',
-    win: { tier: 'better' },
+    win: { tier: 'better', fromVisualizer: null },
     winQty: 1,
     patio: { style: 'sliding', size: 'standard', color: 'white', glass: 'standard' },
     entry: { style: 'single', finish: 'paint', hardware: 'standard' },
@@ -165,6 +189,19 @@
   // --- Windows: Good/Better/Best tier comparison -----------------------
 
   function renderWindowsTiers() {
+    // Everything the visualizer configures is included in every tier rather
+    // than priced per option, so this is a statement of what's carried over,
+    // not a control. Showing it is what makes "See This Configuration's Price"
+    // an honest link: the customer's choices visibly survived the trip.
+    var spec = visualizerSpecLine();
+    if (spec) {
+      var carried = document.createElement('p');
+      carried.className = 'est-note est-visualizer-spec';
+      carried.innerHTML = '<strong>From your visualizer:</strong> ' + spec
+        + ' <span>&mdash; included in every tier below</span>';
+      els.groups.appendChild(carried);
+    }
+
     var wrap = document.createElement('div');
     wrap.className = 'est-tiers';
 
@@ -265,8 +302,10 @@
     if (!els.desc) return;
     var tier = find(WINDOW_TIERS, state.win.tier);
     var total = tier.price * state.winQty;
+    var spec = visualizerSpecLine();
     els.desc.value = 'INSTANT ESTIMATE\n' +
       state.winQty + '× ' + tier.name + ' tier window' + (state.winQty === 1 ? '' : 's') + ' (' + money(tier.price) + '/window, ' + tier.features.join(' · ') + ')\n' +
+      (spec ? 'Configured in the visualizer: ' + spec + '\n' : '') +
       'Estimated total: ' + money(total) + '\n' +
       '(Final pricing is confirmed after an on-site measurement.)' +
       (initialNote ? '\n\n' + initialNote : '');
@@ -384,6 +423,7 @@
   var glass = params.get('glass');
   initialNote = params.get('note') || '';
 
+  var grille = params.get('grille');
   if (tab === 'windows' || tab === 'patio' || tab === 'entry') state.tab = tab;
   if (style) {
     if (PRICING.patioStyles.some(function (s) { return s.id === style; })) { state.tab = 'patio'; state.patio.style = style; }
@@ -394,6 +434,22 @@
   }
   if (glass && PRICING.glass.some(function (g) { return g.id === glass; }) && state.tab === 'patio') {
     state.patio.glass = glass;
+  }
+
+  // The visualizer's window vocabulary is its own — doublehung/clear/prairie,
+  // none of which are ids in PRICING — so these are recognised against
+  // VISUALIZER_LABELS instead. Previously they were only ever applied when the
+  // tab happened to be 'patio', which for a link from the visualizer's window
+  // panel it never is, so a customer's whole window configuration was quietly
+  // discarded on arrival.
+  if (state.tab === 'windows') {
+    var carried = {};
+    var any = false;
+    ['style', 'color', 'glass', 'grille'].forEach(function (key) {
+      var value = { style: style, color: color, glass: glass, grille: grille }[key];
+      if (value && VISUALIZER_LABELS[key][value]) { carried[key] = value; any = true; }
+    });
+    if (any) state.win.fromVisualizer = carried;
   }
 
   render();

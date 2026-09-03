@@ -195,10 +195,30 @@ export function createUI(root, {
     });
   }
 
+  // Doors are the one product the estimate still prices per option, so a
+  // customer who was configuring doors should land on the matching door tab
+  // with their style already selected, rather than on the window tiers.
+  const DOOR_STYLE_TO_ESTIMATE = {
+    single: { tab: 'entry', style: 'single' },
+    sidelights: { tab: 'entry', style: 'sidelights' },
+    french: { tab: 'patio', style: 'french' },
+  };
+
   function estimateHref() {
     const s = state.snapshot();
     const note = `From the 3D visualizer — ${houseConfigurations[s.house]?.name || ''} home, ` +
       `${optionById('siding', s.siding).name} siding, ${optionById('trim', s.trim).name} trim, ${optionById('roofing', s.roofing).name} roof.`;
+
+    if (state.panelSection === 'doors') {
+      const target = DOOR_STYLE_TO_ESTIMATE[s.doorStyle] || DOOR_STYLE_TO_ESTIMATE.single;
+      const doorNote = `${note} Door configured as ${optionById('doorStyle', s.doorStyle).name}, ` +
+        `${optionById('doorColor', s.doorColor).name}, ${optionById('doorHardware', s.doorHardware).name} hardware.`;
+      return `/estimate/?${new URLSearchParams({ tab: target.tab, style: target.style, note: doorNote }).toString()}`;
+    }
+
+    // Windows are a flat Good/Better/Best tier; these options are included in
+    // every tier rather than priced individually, so they travel as a
+    // specification the estimate repeats back, not as price inputs.
     const params = {
       tab: 'windows', style: s.windowStyle, color: s.windowFrame, glass: s.windowGlass, grille: s.windowGrille, note,
     };
