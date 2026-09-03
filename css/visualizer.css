@@ -227,6 +227,15 @@
     font-family: var(--font-text); font-weight: 600; font-size: 15px;
   }
   .viz-sheet-trigger.is-hidden { display: none; }
+
+  /* The Customize trigger above and the sitewide mobile CTA bar below it are
+     both fixed to the bottom of the viewport, so once the canvas scrolls down
+     there they sit on top of the HUD and Reset View can't be tapped. Move the
+     HUD to the top of the canvas, where nothing is fixed over it, and give the
+     "after" compare label the same clearance Presentation Mode already gives
+     it for the same reason. */
+  .viz3d-hud { top: 12px; bottom: auto; }
+  .viz-compare__label--after { top: 60px; }
 }
 
 /* ---- Presentation Mode: a fullscreen layer over the existing visualizer,
@@ -283,6 +292,12 @@ body.viz-present .viz-sheet-trigger {
   font-family: var(--font-text); font-weight: 600; font-size: 15px;
 }
 body.viz-present .viz-sheet-trigger.is-hidden { display: none; }
+/* The Customize bar is fixed across the bottom of the viewport at z-index 250,
+   which sat directly on top of the Reset View button in the canvas HUD and
+   made it unclickable in Presentation Mode — the one place it matters most,
+   since Reset View is what re-frames the camera for the changed aspect ratio.
+   Lift the HUD clear of the bar's 16px offset plus its 52px height. */
+body.viz-present .viz3d-hud { bottom: 82px; }
 
 .viz-explain-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 1px; background: var(--line-hairline); border: 1px solid var(--line-hairline); }
 .viz-explain-cell { background: var(--surface-inset); padding: 32px 28px; }
