@@ -18,39 +18,31 @@ export const MAT = {
 };
 
 // One entry per house model. `model` points at a GLB built to
-// visualizer/models/ASSET-SPEC.md. All three currently share the temporary
-// placeholder — replace a single `model` path with an artist-delivered file
-// and that house upgrades with no other code changes.
+// visualizer/models/ASSET-SPEC.md — three genuinely different massings, all
+// obeying the same MAT_* material-name contract, so the same UI drives all
+// three and an artist-delivered replacement drops in with no code changes.
 //
-// cameraDistance/cameraHeight are deliberately IDENTICAL across all three
-// right now: since they all point at the same placeholder geometry, giving
-// each a distinct, untested value (as if for real, differently-proportioned
-// houses that don't exist yet) risked framing the camera too close to — or
-// even grazing inside — the roof on whichever preset never got visually
-// checked. Re-tune these per house once each one has its own real model.
-const PLACEHOLDER_CAMERA = { cameraDistance: 13, cameraHeight: 3.4 };
-
+// There are deliberately no camera settings here: cameraRig.js frames each
+// house from the loaded model's real bounding box, so a house that changes
+// size — or an artist GLB dropped in over one of these — needs no re-tuning.
 export const houseConfigurations = {
   ranch: {
     id: 'ranch',
     name: 'Ranch',
     description: 'Single-story, wide front elevation.',
-    model: 'models/house-placeholder.glb',
-    ...PLACEHOLDER_CAMERA,
+    model: 'models/house-ranch.glb',
   },
   colonial: {
     id: 'colonial',
     name: 'Colonial',
     description: 'Two-story, symmetric window bays.',
-    model: 'models/house-placeholder.glb',
-    ...PLACEHOLDER_CAMERA,
+    model: 'models/house-colonial.glb',
   },
   craftsman: {
     id: 'craftsman',
     name: 'Craftsman',
-    description: 'Deep gables, wide front windows.',
-    model: 'models/house-placeholder.glb',
-    ...PLACEHOLDER_CAMERA,
+    description: 'Front gable over a full-width porch.',
+    model: 'models/house-craftsman.glb',
   },
 };
 
@@ -121,6 +113,7 @@ export const products = {
       swatch('white', 'White', '#FFFFFF', { roughness: 0.4 }),
       swatch('black', 'Black', '#2B2C2A', { roughness: 0.4 }),
       swatch('bronze', 'Bronze', '#7A5C3E', { roughness: 0.42 }),
+      swatch('gray', 'Stone Gray', '#55555D', { roughness: 0.42 }),
     ],
   },
   windowGlass: {
@@ -145,7 +138,7 @@ export const products = {
   },
   doorStyle: {
     label: 'Door style',
-    hint: 'Feeds your estimate — full-geometry door styles arrive with the modeled house.',
+    hint: 'Changes the lite pattern on the front door.',
     kind: 'list',
     options: [
       { id: 'single', name: 'Single Entry', lites: 'none' },

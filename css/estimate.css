@@ -44,6 +44,14 @@
 .est-cart__range a.btn-lg { width: 100%; justify-content: center; margin-top: 18px; }
 .est-cart__range a.btn-md { width: 100%; justify-content: center; margin-top: 10px; }
 
+.est-visualizer-spec {
+  margin: 0 0 18px; padding: 12px 14px; border: 1px solid var(--line-hairline);
+  border-left: 3px solid var(--acid-300); border-radius: var(--radius-xs);
+  background: var(--surface-inset); color: var(--text-body); font-size: 13px; line-height: 1.6;
+}
+.est-visualizer-spec strong { color: var(--text-strong); letter-spacing: var(--track-label); text-transform: uppercase; font-size: 11px; }
+.est-visualizer-spec span { color: var(--text-muted); }
+
 .est-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 16px; margin-bottom: 24px; }
 .est-tier-card { position: relative; display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--line-strong); border-radius: var(--radius-xs); padding: 22px 20px 20px; background: var(--surface-card); }
 .est-tier-card--featured { border-color: var(--acid-300); box-shadow: 0 0 0 1px var(--acid-300); }
