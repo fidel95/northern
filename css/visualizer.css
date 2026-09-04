@@ -242,7 +242,12 @@
    not a separate app — hides page chrome, expands the canvas, and forces
    the same compact bottom-sheet configurator ui.js already builds for
    narrow viewports, so no separate "presentation" controls need building. ---- */
-body.viz-present .page-frame > *:not(.frame-edge):not(.viz-stage) { display: none !important; }
+/* The stage now sits inside the page's <main> landmark, so hiding the page
+   chrome takes two steps: everything beside <main>, then everything inside it
+   except the stage. <main> itself has to stay displayed for the fixed-position
+   stage to remain in the layout at all. */
+body.viz-present .page-frame > *:not(.frame-edge):not(main) { display: none !important; }
+body.viz-present main > *:not(.viz-stage) { display: none !important; }
 body.viz-present {
   overflow: hidden;
 }

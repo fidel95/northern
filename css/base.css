@@ -200,6 +200,41 @@ a:hover { color: var(--acid-200); }
 img, svg { display: block; max-width: 100%; }
 h1, h2, h3, h4, h5, dl, dd, p { margin: 0; }
 
+/* Keyboard focus. Only the visualizer's own controls used to draw a ring, so
+   everything else — every nav link, every button, every form field — was
+   focusable with nothing to show for it. Later files can still override this
+   where a component draws its own indicator. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--state-focus-ring);
+  outline-offset: 2px;
+}
+
+/* First tab stop on every page: jumps past the eight header links straight to
+   <main id="main">. Off-screen until focused, never display: none, which
+   would take it out of the tab order and defeat the point. */
+.skip-link {
+  position: fixed;
+  top: min(30px, 3vw);
+  left: min(30px, 3vw);
+  z-index: 500;
+  transform: translateY(calc(-100% - min(30px, 3vw)));
+  padding: 12px 20px;
+  background: var(--surface-accent);
+  color: var(--text-on-accent);
+  font-family: var(--font-label);
+  font-size: var(--size-label-sm);
+  letter-spacing: var(--track-label-sm);
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.skip-link:focus { transform: translateY(0); }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }
