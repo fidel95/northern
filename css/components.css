@@ -353,19 +353,6 @@
 .site-footer__links { display: flex; flex-direction: column; }
 .site-footer__links a { font-size: var(--size-body-sm); color: var(--text-body); text-decoration: none; display: inline-block; padding: 8px 0; }
 .site-footer__links a:hover { color: var(--text-accent); }
-.site-footer__signup input {
-  width: 100%;
-  min-height: 44px;
-  padding: 0 var(--space-4);
-  background: var(--surface-inset);
-  border: var(--border-hairline) solid var(--line-strong);
-  border-radius: var(--radius-xs);
-  color: var(--text-strong);
-  font-family: var(--font-text);
-  font-size: var(--size-body-sm);
-  margin-bottom: var(--space-3);
-}
-.site-footer__signup input:focus { outline: none; border-color: var(--state-focus-ring); }
 .site-footer__bottom {
   display: flex;
   justify-content: space-between;

@@ -1,0 +1,13 @@
+{
+  "name": "Northern Pines Construction Services",
+  "short_name": "Northern Pines",
+  "description": "Custom replacement windows and doors for central Indiana homes.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#111113",
+  "theme_color": "#111113",
+  "icons": [
+    { "src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
