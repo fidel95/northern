@@ -1,26 +1,21 @@
-/* Loads the reCAPTCHA widget only once someone actually engages with a lead
-   form.
+/* Loads the reCAPTCHA widget for the lead forms.
 
-   It is the heaviest thing on any page that carries one — about 763KB across
+   It is the heaviest thing on any page that carries one — about 766KB across
    its script, its stylesheet and the Roboto face it pulls in, which is more
-   than everything else on the page put together. It used to load on
-   scroll-proximity with a 600px margin, so simply reading to the bottom of a
-   page bought the whole download for a visitor who never intended to fill
-   anything in. Most visitors never do.
+   than everything else on the page put together, and most visitors never fill
+   a form in. See the comment on the triggers below for why it loads when it
+   does. api.js auto-renders whatever .g-recaptcha elements it finds when it
+   arrives, so injecting it late is safe.
 
-   Now it waits for intent: the first focus or pointer-down anywhere in the
-   form. That still leaves plenty of time, since nobody submits without first
-   filling six fields, and api.js auto-renders any .g-recaptcha element
-   present when it loads, so injecting it late is safe.
-
-   The space it will occupy is reserved in CSS, so arriving late does not
-   shove the submit button down the page under someone's thumb. */
+   The space it will occupy is reserved in CSS, and marked as loading, so it
+   neither shifts the layout nor reads as broken while it is on its way. */
 (function () {
   var forms = document.querySelectorAll('.lead-form');
   if (!forms.length) return;
 
   var loaded = false;
-  function loadRecaptcha() {
+  function loadRecaptcha(form) {
+    if (form) form.classList.add('is-verifying');
     if (loaded) return;
     loaded = true;
     var s = document.createElement('script');
@@ -30,11 +25,45 @@
     document.head.appendChild(s);
   }
 
+  // Two triggers, because neither alone is right.
+  //
+  // Loading on scroll-proximity meant reading to the bottom of a page bought
+  // the whole 766KB for someone who never intended to fill anything in.
+  // Waiting for the first keystroke fixed that but moved the download after
+  // it, and on a throttled phone the widget then took about 2.4 seconds to
+  // become usable — the customer sees an empty box at exactly the moment
+  // they are trying to finish.
+  //
+  // Preconnecting first was tried and is not the answer: it saved about 70ms,
+  // because the cost here is the bytes, not the handshake.
+  //
+  // So: dwell, or touch. Someone who scrolls the form into view and stays
+  // there for a moment is considering it, and gets the download started while
+  // they read. Someone who scrolls straight past pays nothing. And anyone who
+  // reaches a field before the dwell fires triggers it immediately anyway.
+  var DWELL_MS = 1200;
+
   Array.prototype.forEach.call(forms, function (form) {
-    // focusin covers keyboard and assistive technology; pointerdown covers
-    // a tap or click that has not resolved into a focus yet.
-    form.addEventListener('focusin', loadRecaptcha, { once: true });
-    form.addEventListener('pointerdown', loadRecaptcha, { once: true, passive: true });
+    function now() { loadRecaptcha(form); }
+    form.addEventListener('focusin', now, { once: true });
+    form.addEventListener('pointerdown', now, { once: true, passive: true });
+
+    if (!('IntersectionObserver' in window)) { now(); return; }
+
+    var timer = null;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          if (timer === null) {
+            timer = setTimeout(function () { io.disconnect(); now(); }, DWELL_MS);
+          }
+        } else if (timer !== null) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      });
+    }, { threshold: 0.25 });
+    io.observe(form);
   });
 })();
 

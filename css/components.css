@@ -315,6 +315,20 @@
    standard reCAPTCHA; the 0.94 scale on it is a transform, which does not
    change the box. */
 .lead-form .g-recaptcha { min-height: 78px; }
+/* While the widget is on its way, say so. The box is reserved either way, and
+   an empty bordered gap reads as something broken rather than something
+   loading. :empty clears itself the moment reCAPTCHA renders into the div,
+   so nothing has to remove it. */
+.lead-form.is-verifying .g-recaptcha:empty::before {
+  content: 'Loading verification\2026';
+  display: flex;
+  align-items: center;
+  height: 78px;
+  font-family: var(--font-label);
+  font-size: var(--size-label-sm);
+  letter-spacing: var(--track-label-sm);
+  color: var(--text-faint);
+}
 
 .lead-form__submit {
   margin-top: var(--space-2);
