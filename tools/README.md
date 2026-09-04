@@ -47,3 +47,27 @@ downloading a subset the page never uses. Space Grotesk serves one variable
 file for 400/500/700, so it gets a single face with `font-weight: 400 700`;
 Archivo is variable on both weight and width, which the display type relies on
 (`font-stretch: 118%`). All three families are OFL.
+
+## Adding a service-area page
+
+There is no generator for these. They were scaffolded once and are now plain
+hand-maintained HTML like every other page in the repo, which is the point —
+a generator would quietly clobber any edit made to a page afterwards.
+
+To add a city, copy `service-area/carmel/index.html` and change:
+
+1. `<title>`, the meta description, `og:title`/`og:description`, and `canonical`
+   + `og:url` (three places carry the slug).
+2. Both JSON-LD blocks: `areaServed.name`, `containedInPlace.name`, the `url`,
+   and the last `BreadcrumbList` item.
+3. The hero: county eyebrow, `page-hero__watermark`, `<h1>`, and the lede.
+4. The three `card-cell` blocks under "What we see in … homes" — these are the
+   reason the page is worth having. Write about that city's actual housing
+   stock. Six real pages beat fourteen templated ones; a thin duplicate is
+   worse than no page.
+5. The `-carmel` suffix on the six lead-form `id`/`for` pairs, and the default
+   `<textarea>` text.
+6. The "Also serving nearby" links, on the new page and on the six existing
+   ones.
+
+Then add it to `sitemap.xml` and to the card grid on `service-area/index.html`.
