@@ -35,11 +35,34 @@ function worldExtents(mesh) {
   return { box, size };
 }
 
-function largestTwo(size) {
+// Which axis of a pane runs across it, and which runs up it.
+//
+// The rectangles in styleBars/grilleBars are authored in window space: x runs
+// across the opening, y runs up it. Choosing those two axes by size — the
+// largest for x, the next for y — transposes the whole pattern on any window
+// taller than it is wide, which is most windows on a house. A double-hung's
+// check rail then ran down the middle of the glass instead of across it,
+// making every portrait double-hung read as a slider, and six-over-six came
+// out on its side.
+//
+// The pane is a thin box in a wall, so the smallest axis is the wall it sits
+// in and vertical is simply world up.
+function paneAxes(size) {
   const axes = [
     { k: 'x', v: size.x }, { k: 'y', v: size.y }, { k: 'z', v: size.z },
-  ].sort((a, b) => b.v - a.v);
-  return { a: axes[0], b: axes[1], thin: axes[2] };
+  ];
+  const bySize = axes.slice().sort((p, q) => q.v - p.v);
+  const thin = bySize[2];
+
+  // A pane lying flat — a skylight, say — has no "up" within its own plane,
+  // so there is nothing better to do than the old size ordering.
+  if (thin.k === 'y') return { a: bySize[0], b: bySize[1], thin };
+
+  return {
+    a: axes.find((ax) => ax.k !== 'y' && ax.k !== thin.k),
+    b: axes.find((ax) => ax.k === 'y'),
+    thin,
+  };
 }
 
 // One material (and one set of GPU textures) shared across every mesh in a
@@ -168,7 +191,7 @@ function grilleBars(grilleId) {
 
 function buildBarsForGlass(glassMesh, rects, barMaterial, houseCenter, group) {
   const { box, size } = worldExtents(glassMesh);
-  const { a, b, thin } = largestTwo(size);
+  const { a, b, thin } = paneAxes(size);
   const center = box.getCenter(new THREE.Vector3());
 
   const outward = Math.sign(center[thin.k] - houseCenter[thin.k]) || 1;
