@@ -90,3 +90,20 @@ actually asked: how the style opens.
 
 Replace any of them the day a real installation photo exists — the markup is
 the same `<img>` either way.
+
+## `csp-hash.py`
+
+`_headers` pins the visualizer's inline `<script type="importmap">` by SHA-256,
+so any edit to that block — a three.js version bump, a reformat — stops the
+browser running it and the visualizer silently never loads.
+
+```sh
+python3 tools/csp-hash.py
+```
+
+Prints the current hash and exits non-zero if `_headers` is stale. Run it after
+`vendor-three.mjs` or any edit to `visualizer/index.html`'s import map.
+
+To test the policy before deploying, serve the site with the headers applied
+rather than trusting it in production — a broken `form-action` takes the lead
+forms down silently.

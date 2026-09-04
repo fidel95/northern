@@ -6,6 +6,7 @@
 import {
   products, houseConfigurations, optionById, DEFAULT_SELECTIONS,
 } from './config.js';
+import { shareUrl } from './urlState.js';
 import { CATEGORIES, categoryLabel } from './categories.js';
 
 // 'house' (which base model is loaded) isn't a material choice, so switching
@@ -232,7 +233,15 @@ export function createUI(root, {
       `Windows: ${optionById('windowStyle', s.windowStyle).name} · ${optionById('windowFrame', s.windowFrame).name} frame · ` +
       `${optionById('windowGrille', s.windowGrille).name} grille · ${optionById('windowGlass', s.windowGlass).name} glass\n` +
       `Door: ${optionById('doorStyle', s.doorStyle).name} · ${optionById('doorColor', s.doorColor).name} · ${optionById('doorHardware', s.doorHardware).name} hardware\n` +
-      `Siding: ${optionById('siding', s.siding).name} · Trim: ${optionById('trim', s.trim).name} · Roof: ${optionById('roofing', s.roofing).name}`;
+      `Siding: ${optionById('siding', s.siding).name} · Trim: ${optionById('trim', s.trim).name} · Roof: ${optionById('roofing', s.roofing).name}\n` +
+      // The prose above is for reading; this line is for the rep. Opening it
+      // rebuilds exactly what the customer configured, which beats
+      // reconstructing it by hand from the list before an appointment.
+      `\nOpen this configuration: ${shareUrl(s)}` +
+      (state.mode === 'photo'
+        ? '\n(Configured over a photo of their own home. The photo stays in their'
+          + ' browser and cannot travel in a link, so this opens on the demo home.)'
+        : '');
   }
 
   function renderAll() {

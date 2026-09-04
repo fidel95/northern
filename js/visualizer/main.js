@@ -15,6 +15,7 @@ import { houseConfigurations } from './config.js';
 import { buildBeforeHouse, disposeBeforeHouse, renderCompareSplit } from './compareMode.js';
 import { VisualizerState } from './state.js';
 import { createUI } from './ui.js';
+import { selectionsFromSearch, syncUrl } from './urlState.js';
 import { categoryForMaterialName } from './categories.js';
 import { captureSnapshot, downloadCanvas } from './screenshot.js';
 import { PhotoMode } from './photoMode.js';
@@ -345,12 +346,27 @@ function init() {
     onComparePos: (fraction) => { compareFraction = fraction; markActive(); },
   });
 
-  const params = new URLSearchParams(location.search);
-  const styleParam = params.get('style');
-  if (styleParam && ['doublehung', 'casement', 'picture', 'slider'].includes(styleParam)) {
-    state.set('windowStyle', styleParam);
+  // A shared link carries the whole configuration, not just the window style
+  // it used to. Every value is validated against config.js inside
+  // selectionsFromSearch, so anything unrecognised is simply absent here.
+  const shared = selectionsFromSearch(location.search);
+  Object.keys(shared).forEach((key) => state.set(key, shared[key]));
+
+  // Open on the panel the link was most obviously about, so someone arriving
+  // from a window-style link lands on windows rather than siding.
+  if (shared.doorStyle || shared.doorColor || shared.doorHardware) {
+    state.setPanelSection('doors');
+  } else if (shared.windowStyle || shared.windowFrame || shared.windowGlass || shared.windowGrille) {
     state.setPanelSection('windows');
   }
+
+  // From here the address bar tracks the configuration, so it is always
+  // ready to copy. state.set() is the single chokepoint every control goes
+  // through, which is why one subscription covers all of them.
+  syncUrl(state.snapshot());
+  state.subscribe((type) => {
+    if (type === 'selection' || type === 'reset') syncUrl(state.snapshot());
+  });
 
     loop.start();
     loadAndApplyHouse(state.get('house'));

@@ -1,0 +1,32 @@
+# Response headers for the Cloudflare Workers static-asset bundle.
+#
+# The Content-Security-Policy is the reason this file exists. The site takes
+# configuration out of URLs (js/visualizer/urlState.js), and although every
+# value there is validated against a fixed list before it is used, a policy
+# turns a future coding mistake into a blocked request instead of a working
+# cross-site scripting attack on our own domain.
+#
+# IF THE VISUALIZER STOPS LOADING AFTER AN EDIT, LOOK HERE FIRST.
+# script-src pins the SHA-256 of the inline <script type="importmap"> in
+# visualizer/index.html. Changing so much as a space in that block — bumping
+# the three.js version, for instance — changes the hash and the browser will
+# refuse to run it. Recompute with:
+#
+#   python3 tools/csp-hash.py
+#
+# The 34 <script type="application/ld+json"> blocks are data, not executable
+# script, so they are not covered by script-src and need nothing here.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-ik+2WtZqCkTBYZUdUZTlfLdjA82tCYi2NTFJdr5/NBM=' https://www.google.com https://www.gstatic.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://www.gstatic.com; img-src 'self' data: blob: https://www.gstatic.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://static.cloudflareinsights.com https://cloudflareinsights.com; worker-src 'self' blob:; child-src 'self' blob:; frame-src https://www.google.com; form-action 'self' https://webto.salesforce.com; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), interest-cohort=()
+
+# Fingerprinted-by-content assets that never change under the same name.
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/js/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
