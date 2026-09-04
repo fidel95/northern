@@ -6,9 +6,13 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js';
 
-const THREE_VERSION = '0.185.1';
-const DRACO_PATH = `https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}/examples/jsm/libs/draco/`;
-const BASIS_PATH = `https://cdn.jsdelivr.net/npm/three@${THREE_VERSION}/examples/jsm/libs/basis/`;
+// three and its decoders are vendored under /js/vendor/three (see
+// tools/vendor-three.mjs) rather than pulled from a CDN at runtime: the
+// visualizer is the reason most people come to this site, and it should not
+// stop working because a third party is having a bad day. The version is
+// pinned there, so it is deliberately not restated here.
+const DRACO_PATH = '/js/vendor/three/examples/jsm/libs/draco/';
+const BASIS_PATH = '/js/vendor/three/examples/jsm/libs/basis/';
 
 let sharedDraco = null;
 function getDracoLoader() {

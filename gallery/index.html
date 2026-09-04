@@ -18,9 +18,8 @@
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#111113">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100..125,100..900&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap">
+<link rel="preload" href="/assets/fonts/archivo-var-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/space-grotesk-var-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="../css/base.css">
 <link rel="stylesheet" href="../css/components.css">
 <link rel="stylesheet" href="../css/content.css">
@@ -105,8 +104,8 @@
     <div class="project-grid">
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/window-shutters-before.jpg" alt="Old aluminum double-hung window with worn screens before replacement" width="675" height="900"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/window-shutters-after.jpg" alt="New white double-hung window installed between black shutters" width="675" height="900"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/window-shutters-before-340.avif 340w, ../assets/gallery/window-shutters-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/window-shutters-before.jpg" alt="Old aluminum double-hung window with worn screens before replacement" width="675" height="900"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/window-shutters-after-340.avif 340w, ../assets/gallery/window-shutters-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/window-shutters-after.jpg" alt="New white double-hung window installed between black shutters" width="675" height="900"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">WINDOW REPLACEMENT</span>
@@ -118,8 +117,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/picture-window-before.jpg" alt="Interior view of an old window with worn dark wood trim before replacement" width="675" height="900"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/picture-window-after.jpg" alt="Interior view of new windows with the original wood trim preserved" width="675" height="900"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/picture-window-before-340.avif 340w, ../assets/gallery/picture-window-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/picture-window-before.jpg" alt="Interior view of an old window with worn dark wood trim before replacement" width="675" height="900"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/picture-window-after-340.avif 340w, ../assets/gallery/picture-window-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/picture-window-after.jpg" alt="Interior view of new windows with the original wood trim preserved" width="675" height="900"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">LIVING ROOM</span>
@@ -131,8 +130,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/triple-window-before.jpg" alt="Old dark aluminum triple window on a porch before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/triple-window-after.jpg" alt="New white triple window on the same porch after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/triple-window-before-340.avif 340w, ../assets/gallery/triple-window-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/triple-window-before.jpg" alt="Old dark aluminum triple window on a porch before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/triple-window-after-340.avif 340w, ../assets/gallery/triple-window-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/triple-window-after.jpg" alt="New white triple window on the same porch after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">SCREENED PORCH</span>
@@ -144,8 +143,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/arched-casement-before.jpg" alt="Old bronze-framed arched casement window before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/arched-casement-after.jpg" alt="New cream-framed arched casement window after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/arched-casement-before-340.avif 340w, ../assets/gallery/arched-casement-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/arched-casement-before.jpg" alt="Old bronze-framed arched casement window before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/arched-casement-after-340.avif 340w, ../assets/gallery/arched-casement-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/arched-casement-after.jpg" alt="New cream-framed arched casement window after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">ARCHED CASEMENT</span>
@@ -157,8 +156,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/wide-window-before.jpg" alt="Old aluminum windows with dirty screens before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/wide-window-after.jpg" alt="New wide white window after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/wide-window-before-340.avif 340w, ../assets/gallery/wide-window-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/wide-window-before.jpg" alt="Old aluminum windows with dirty screens before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/wide-window-after-340.avif 340w, ../assets/gallery/wide-window-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/wide-window-after.jpg" alt="New wide white window after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">WINDOW REPLACEMENT</span>
@@ -170,8 +169,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/narrow-window-before.jpg" alt="Old single window on a brick house before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/narrow-window-after.jpg" alt="New white double-hung window on the same brick house after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/narrow-window-before-340.avif 340w, ../assets/gallery/narrow-window-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/narrow-window-before.jpg" alt="Old single window on a brick house before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/narrow-window-after-340.avif 340w, ../assets/gallery/narrow-window-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/narrow-window-after.jpg" alt="New white double-hung window on the same brick house after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">WINDOW REPLACEMENT</span>
@@ -183,8 +182,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/patio-window-before.jpg" alt="Porch wall with an old window opening removed before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/patio-window-after.jpg" alt="Porch wall with a new large black-framed picture window after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/patio-window-before-340.avif 340w, ../assets/gallery/patio-window-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/patio-window-before.jpg" alt="Porch wall with an old window opening removed before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/patio-window-after-340.avif 340w, ../assets/gallery/patio-window-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/patio-window-after.jpg" alt="Porch wall with a new large black-framed picture window after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">SCREENED PORCH</span>
@@ -196,8 +195,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/stone-exterior-before.jpg" alt="Old dirty aluminum awning windows on a stone-clad wall before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/stone-exterior-after.jpg" alt="New large picture window on the same stone-clad wall after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/stone-exterior-before-340.avif 340w, ../assets/gallery/stone-exterior-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/stone-exterior-before.jpg" alt="Old dirty aluminum awning windows on a stone-clad wall before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/stone-exterior-after-340.avif 340w, ../assets/gallery/stone-exterior-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/stone-exterior-after.jpg" alt="New large picture window on the same stone-clad wall after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">STONE-CLAD WALL</span>
@@ -209,8 +208,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/bay-window-before.jpg" alt="Old curved aluminum bay window before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/bay-window-after.jpg" alt="New curved bay window with black frames after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/bay-window-before-340.avif 340w, ../assets/gallery/bay-window-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/bay-window-before.jpg" alt="Old curved aluminum bay window before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/bay-window-after-340.avif 340w, ../assets/gallery/bay-window-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/bay-window-after.jpg" alt="New curved bay window with black frames after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">CURVED BAY WINDOW</span>
@@ -222,8 +221,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/triple-picture-before.jpg" alt="Old worn wood-framed triple window before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/triple-picture-after.jpg" alt="New white triple picture window after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/triple-picture-before-340.avif 340w, ../assets/gallery/triple-picture-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/triple-picture-before.jpg" alt="Old worn wood-framed triple window before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/triple-picture-after-340.avif 340w, ../assets/gallery/triple-picture-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/triple-picture-after.jpg" alt="New white triple picture window after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">LIVING ROOM</span>
@@ -235,8 +234,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/basement-window-before.jpg" alt="Old wood-framed basement window before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/basement-window-after.jpg" alt="New dark-framed basement window after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/basement-window-before-340.avif 340w, ../assets/gallery/basement-window-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/basement-window-before.jpg" alt="Old wood-framed basement window before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/basement-window-after-340.avif 340w, ../assets/gallery/basement-window-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/basement-window-after.jpg" alt="New dark-framed basement window after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">BASEMENT WINDOW</span>
@@ -248,8 +247,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/yellow-siding-before.jpg" alt="Old aluminum window with damaged trim on yellow siding before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/yellow-siding-after.jpg" alt="New white window with repaired trim on the same yellow siding after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/yellow-siding-before-340.avif 340w, ../assets/gallery/yellow-siding-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/yellow-siding-before.jpg" alt="Old aluminum window with damaged trim on yellow siding before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/yellow-siding-after-340.avif 340w, ../assets/gallery/yellow-siding-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/yellow-siding-after.jpg" alt="New white window with repaired trim on the same yellow siding after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">WINDOW REPLACEMENT</span>
@@ -261,8 +260,8 @@
       </article>
       <article class="project-card">
         <div class="project-card__photos">
-          <div class="project-card__photo project-card__photo--before"><img src="../assets/gallery/rafters-room-before.jpg" alt="Old brown-trimmed windows in an unfinished addition before replacement" width="675" height="900" loading="lazy"><span>BEFORE</span></div>
-          <div class="project-card__photo project-card__photo--after"><img src="../assets/gallery/rafters-room-after.jpg" alt="New windows set in the same addition, still under construction, after replacement" width="675" height="900" loading="lazy"><span>AFTER</span></div>
+          <div class="project-card__photo project-card__photo--before"><picture><source type="image/avif" srcset="../assets/gallery/rafters-room-before-340.avif 340w, ../assets/gallery/rafters-room-before.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/rafters-room-before.jpg" alt="Old brown-trimmed windows in an unfinished addition before replacement" width="675" height="900" loading="lazy"></picture><span>BEFORE</span></div>
+          <div class="project-card__photo project-card__photo--after"><picture><source type="image/avif" srcset="../assets/gallery/rafters-room-after-340.avif 340w, ../assets/gallery/rafters-room-after.avif 675w" sizes="(max-width: 1023px) 44vw, 220px"><img src="../assets/gallery/rafters-room-after.jpg" alt="New windows set in the same addition, still under construction, after replacement" width="675" height="900" loading="lazy"></picture><span>AFTER</span></div>
         </div>
         <div class="project-card__body">
           <span class="project-card__meta">ROOM ADDITION</span>
