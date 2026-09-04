@@ -48,16 +48,40 @@ export class PhotoMode {
   loadFile(file) {
     const image = new Image();
     return new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+
+      // Revoke on both paths. The bitmap is decoded by the time onload runs,
+      // so the URL is finished with, and without this every photo a customer
+      // tries stays held for the life of the page.
+      const finish = (ok, message) => {
+        URL.revokeObjectURL(url);
+        this.onStatus(message);
+        resolve(ok);
+      };
+
       image.onload = () => {
         this.img = image;
         this.windows = [];
         this.zones = { siding: null, roofing: null, trim: null };
         this.tracing = [];
-        this.onStatus('Photo loaded. Pick a zone on the right, then tap its four corners.');
         this.draw();
-        resolve();
+        finish(true, 'Photo loaded. Pick a zone on the right, then tap its four corners.');
       };
-      image.src = URL.createObjectURL(file);
+
+      // There was no error handler here, so a file the browser could not
+      // decode left this promise pending and the panel silent — nothing
+      // appeared and nothing was said. The likely case is not exotic: iPhones
+      // shoot HEIC by default, Safari reads it and desktop Chrome and Firefox
+      // do not, so "photograph your house, then upload it on your laptop"
+      // dead-ended with no explanation at all.
+      image.onerror = () => {
+        finish(false,
+          'That file could not be opened. iPhone photos are often saved as HEIC, '
+          + 'which some browsers cannot read. Try a JPEG or PNG — or open the photo, '
+          + 'take a screenshot of it, and upload the screenshot.');
+      };
+
+      image.src = url;
     });
   }
 
