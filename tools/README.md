@@ -71,3 +71,22 @@ To add a city, copy `service-area/carmel/index.html` and change:
    ones.
 
 Then add it to `sitemap.xml` and to the card grid on `service-area/index.html`.
+
+## `make-style-diagrams.py`
+
+Regenerates the window and door style diagrams in `assets/styles/`.
+
+```sh
+python3 tools/make-style-diagrams.py
+```
+
+These fill the product cards on `/windows/` and `/doors/` that no photograph
+of our own work covers — the awning window, and all six door styles. They are
+diagrams rather than photographs on purpose. The open-license image pools are
+mostly manufacturer marketing shots (the top "casement window" result is an
+Andersen photo under CC BY-ND), and a competitor's product does not belong on
+a card quoting our prices. A diagram also answers the question the card is
+actually asked: how the style opens.
+
+Replace any of them the day a real installation photo exists — the markup is
+the same `<img>` either way.
