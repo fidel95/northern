@@ -284,8 +284,11 @@
   margin-bottom: var(--space-2);
   display: block;
 }
-.lead-form input[type="text"],
-.lead-form input[type="email"],
+/* Match on what an input is *not*, rather than listing types. Enumerating
+   them meant that giving the phone field its correct type="tel" dropped it
+   out of every rule here, and it rendered as an unstyled white box against a
+   dark form. A future type="url" or type="number" would have done the same. */
+.lead-form input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="submit"]),
 .lead-form textarea {
   width: 100%;
   padding: 0 var(--space-4);
@@ -296,9 +299,16 @@
   font-size: var(--size-body);
   color: var(--text-strong);
 }
-.lead-form input[type="text"], .lead-form input[type="email"] { min-height: 44px; }
+.lead-form input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="submit"]) { min-height: 44px; }
 .lead-form textarea { min-height: 96px; resize: vertical; padding: var(--space-3) var(--space-4); }
 .lead-form input:focus, .lead-form textarea:focus { border-color: var(--state-focus-ring); }
+.lead-form input:-webkit-autofill,
+.lead-form input:-webkit-autofill:hover,
+.lead-form input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-strong);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-inset) inset;
+  caret-color: var(--text-strong);
+}
 .lead-form__submit {
   margin-top: var(--space-2);
   width: 100%;

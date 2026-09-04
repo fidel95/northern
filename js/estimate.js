@@ -431,12 +431,38 @@
       state.cart.forEach(function (c) {
         var row = document.createElement('div');
         row.className = 'est-cart__item';
-        row.innerHTML =
-          '<div style="min-width:0"><strong class="est-cart__item-title">' + c.qty + '&times; ' + c.title + '</strong>' +
-          '<span class="est-cart__item-meta">' + c.meta + ' · ' + money(c.unit) + ' each</span></div>' +
-          '<div class="est-cart__item-right"><span class="est-cart__item-sub">' + money(c.subtotal) + '</span>' +
-          '<button type="button" class="est-cart__remove">REMOVE</button></div>';
-        row.querySelector('.est-cart__remove').addEventListener('click', function () {
+        // Built as nodes rather than an innerHTML string. c.title and c.meta
+        // come back out of localStorage now that the cart persists, and
+        // anything restored from storage is untrusted: a transient script
+        // injection elsewhere could otherwise leave a poisoned cart behind
+        // that re-runs on every later visit, outliving the bug that planted
+        // it. textContent makes that impossible rather than unlikely.
+        var left = document.createElement('div');
+        left.style.minWidth = '0';
+        var title = document.createElement('strong');
+        title.className = 'est-cart__item-title';
+        title.textContent = c.qty + '\u00d7 ' + c.title;
+        var meta = document.createElement('span');
+        meta.className = 'est-cart__item-meta';
+        meta.textContent = c.meta + ' \u00b7 ' + money(c.unit) + ' each';
+        left.appendChild(title);
+        left.appendChild(meta);
+
+        var right = document.createElement('div');
+        right.className = 'est-cart__item-right';
+        var sub = document.createElement('span');
+        sub.className = 'est-cart__item-sub';
+        sub.textContent = money(c.subtotal);
+        var removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'est-cart__remove';
+        removeBtn.textContent = 'REMOVE';
+        right.appendChild(sub);
+        right.appendChild(removeBtn);
+
+        row.appendChild(left);
+        row.appendChild(right);
+        removeBtn.addEventListener('click', function () {
           state.cart = state.cart.filter(function (x) { return x.key !== c.key; });
           render();
         });
