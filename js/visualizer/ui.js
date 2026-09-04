@@ -6,7 +6,7 @@
 import {
   products, houseConfigurations, optionById, DEFAULT_SELECTIONS,
 } from './config.js';
-import { shareUrl } from './urlState.js';
+import { shareUrl, syncUrl } from './urlState.js';
 import { CATEGORIES, categoryLabel } from './categories.js';
 
 // 'house' (which base model is loaded) isn't a material choice, so switching
@@ -114,6 +114,9 @@ export function createUI(root, {
     document.body.classList.toggle('viz-present', on);
     if (refs.presentExit) refs.presentExit.hidden = !on;
     if (refs.presentToggle) refs.presentToggle.textContent = on ? 'Exit Presentation Mode' : 'Presentation Mode';
+    // Keep the address bar in step, so a link copied while presenting opens
+    // presenting, and one copied after leaving does not.
+    syncUrl(state.snapshot());
     renderAll();
   }
 
@@ -302,5 +305,5 @@ export function createUI(root, {
 
   setComparePos(0.5, { silent: true });
   renderAll();
-  return { renderAll, setStatus, resetCompare, refs };
+  return { renderAll, setStatus, resetCompare, setPresentation, refs };
 }

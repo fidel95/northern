@@ -1,10 +1,23 @@
-/* Loads the reCAPTCHA widget script only once a lead form is actually
-   about to be used — on scroll-proximity or on focus — instead of on
-   every page load. api.js auto-renders any .g-recaptcha element present
-   in the DOM at the moment it loads, so injecting it late is safe. */
+/* Loads the reCAPTCHA widget only once someone actually engages with a lead
+   form.
+
+   It is the heaviest thing on any page that carries one — about 763KB across
+   its script, its stylesheet and the Roboto face it pulls in, which is more
+   than everything else on the page put together. It used to load on
+   scroll-proximity with a 600px margin, so simply reading to the bottom of a
+   page bought the whole download for a visitor who never intended to fill
+   anything in. Most visitors never do.
+
+   Now it waits for intent: the first focus or pointer-down anywhere in the
+   form. That still leaves plenty of time, since nobody submits without first
+   filling six fields, and api.js auto-renders any .g-recaptcha element
+   present when it loads, so injecting it late is safe.
+
+   The space it will occupy is reserved in CSS, so arriving late does not
+   shove the submit button down the page under someone's thumb. */
 (function () {
-  var targets = document.querySelectorAll('.g-recaptcha');
-  if (!targets.length) return;
+  var forms = document.querySelectorAll('.lead-form');
+  if (!forms.length) return;
 
   var loaded = false;
   function loadRecaptcha() {
@@ -17,19 +30,11 @@
     document.head.appendChild(s);
   }
 
-  if ('IntersectionObserver' in window) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) { loadRecaptcha(); io.disconnect(); }
-      });
-    }, { rootMargin: '600px 0px' });
-    targets.forEach(function (t) { io.observe(t); });
-  } else {
-    loadRecaptcha();
-  }
-
-  document.querySelectorAll('.lead-form input, .lead-form textarea').forEach(function (el) {
-    el.addEventListener('focus', loadRecaptcha, { once: true });
+  Array.prototype.forEach.call(forms, function (form) {
+    // focusin covers keyboard and assistive technology; pointerdown covers
+    // a tap or click that has not resolved into a focus yet.
+    form.addEventListener('focusin', loadRecaptcha, { once: true });
+    form.addEventListener('pointerdown', loadRecaptcha, { once: true, passive: true });
   });
 })();
 

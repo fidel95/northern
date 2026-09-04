@@ -309,6 +309,13 @@
   -webkit-box-shadow: 0 0 0 1000px var(--surface-inset) inset;
   caret-color: var(--text-strong);
 }
+/* Reserve the widget's box. It now loads on first interaction rather than on
+   scroll, so without this it would arrive mid-form-fill and shove the submit
+   button down the page under someone's thumb. 78px is the layout height of a
+   standard reCAPTCHA; the 0.94 scale on it is a transform, which does not
+   change the box. */
+.lead-form .g-recaptcha { min-height: 78px; }
+
 .lead-form__submit {
   margin-top: var(--space-2);
   width: 100%;

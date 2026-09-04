@@ -44,6 +44,23 @@ const PARAM = {
   doorHardware: 'doorhw',
 };
 
+// Presentation mode is not a product selection, so it stays out of the map
+// above and is passed explicitly. A rep opening a customer's configuration on
+// a tablet wants it fullscreen on arrival, not after hunting for a button
+// while the customer watches.
+const PRESENT_PARAM = 'present';
+
+export function presentFromSearch(search) {
+  return new URLSearchParams(search).get(PRESENT_PARAM) === '1';
+}
+
+/** Whether the page is currently presenting — the one DOM read, in one place. */
+export function isPresenting() {
+  return typeof document !== 'undefined'
+    && !!document.body
+    && document.body.classList.contains('viz-present');
+}
+
 /** The ids that are valid for a given state key, straight from the config. */
 function allowedIds(key) {
   if (key === 'house') return Object.keys(houseConfigurations);
@@ -76,7 +93,7 @@ export function selectionsFromSearch(search) {
  * defaults so a lightly-changed house does not produce an eleven-parameter
  * URL nobody will paste.
  */
-export function searchFromSelections(selections) {
+export function searchFromSelections(selections, present = false) {
   const params = new URLSearchParams();
 
   Object.keys(PARAM).forEach((key) => {
@@ -86,6 +103,8 @@ export function searchFromSelections(selections) {
     params.set(PARAM[key], value);
   });
 
+  if (present) params.set(PRESENT_PARAM, '1');
+
   const q = params.toString();
   return q ? `?${q}` : '';
 }
@@ -93,7 +112,7 @@ export function searchFromSelections(selections) {
 /** The absolute link to hand someone — for the lead form and the rep. */
 export function shareUrl(selections) {
   const { origin, pathname } = window.location;
-  return `${origin}${pathname}${searchFromSelections(selections)}`;
+  return `${origin}${pathname}${searchFromSelections(selections, isPresenting())}`;
 }
 
 /**
@@ -105,7 +124,7 @@ export function shareUrl(selections) {
  */
 export function syncUrl(selections) {
   try {
-    const url = `${window.location.pathname}${searchFromSelections(selections)}${window.location.hash}`;
+    const url = `${window.location.pathname}${searchFromSelections(selections, isPresenting())}${window.location.hash}`;
     window.history.replaceState(window.history.state, '', url);
   } catch (e) {
     // Some embedded browsers throw on replaceState. A stale address bar is

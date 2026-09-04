@@ -15,7 +15,7 @@ import { houseConfigurations } from './config.js';
 import { buildBeforeHouse, disposeBeforeHouse, renderCompareSplit } from './compareMode.js';
 import { VisualizerState } from './state.js';
 import { createUI } from './ui.js';
-import { selectionsFromSearch, syncUrl } from './urlState.js';
+import { selectionsFromSearch, presentFromSearch, syncUrl } from './urlState.js';
 import { categoryForMaterialName } from './categories.js';
 import { captureSnapshot, downloadCanvas } from './screenshot.js';
 import { PhotoMode } from './photoMode.js';
@@ -346,10 +346,16 @@ function init() {
     onComparePos: (fraction) => { compareFraction = fraction; markActive(); },
   });
 
+  // Read everything out of the incoming URL before anything rewrites it —
+  // syncUrl below rebuilds the query string from state, and present is not
+  // part of state, so reading it afterwards would find it already gone.
+  const incoming = location.search;
+  const shared = selectionsFromSearch(incoming);
+  const wantsPresentation = presentFromSearch(incoming);
+
   // A shared link carries the whole configuration, not just the window style
   // it used to. Every value is validated against config.js inside
   // selectionsFromSearch, so anything unrecognised is simply absent here.
-  const shared = selectionsFromSearch(location.search);
   Object.keys(shared).forEach((key) => state.set(key, shared[key]));
 
   // Open on the panel the link was most obviously about, so someone arriving
@@ -359,6 +365,13 @@ function init() {
   } else if (shared.windowStyle || shared.windowFrame || shared.windowGlass || shared.windowGrille) {
     state.setPanelSection('windows');
   }
+
+  // present=1 opens straight into presentation mode, which is what makes the
+  // link in a Salesforce lead useful on a tablet: the rep taps it and the
+  // customer's own house is already fullscreen, with no page chrome to
+  // dismiss in front of them. Applied before the first syncUrl so the flag
+  // survives into the rewritten address bar.
+  if (wantsPresentation) ui.setPresentation(true);
 
   // From here the address bar tracks the configuration, so it is always
   // ready to copy. state.set() is the single chokepoint every control goes
