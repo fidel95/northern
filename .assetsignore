@@ -21,6 +21,15 @@ README.md
 visualizer/models/*.py
 visualizer/models/ASSET-SPEC.md
 
+# Scripts that regenerate committed artefacts (AVIF siblings, the vendored
+# three.js mirror). They run at author time, never in a browser.
+tools
+
+# Nothing below is part of the site.
+.DS_Store
+.claude
+.assetsignore
+
 # Design handoff material, kept in the repo but not part of the site.
 prototype-files-needed
 *.zip

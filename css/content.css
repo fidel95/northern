@@ -190,3 +190,8 @@
 .contact-quicklinks a:hover { background: var(--surface-raised); }
 .contact-quicklinks span { font-family: var(--font-label); font-size: 11px; letter-spacing: 0.1em; color: var(--text-muted); display: block; margin-bottom: 8px; }
 .contact-quicklinks strong { font-family: var(--font-display); font-weight: 800; font-stretch: 118%; text-transform: uppercase; letter-spacing: -0.02em; font-size: 18px; color: var(--text-strong); display: block; line-height: .94; }
+
+/* Cross-links between the service-area city pages. */
+.service-area-nearby { display: inline; }
+.service-area-nearby a { white-space: nowrap; }
+.service-area-nearby a:not(:last-of-type)::after { content: ','; color: var(--text-muted); }

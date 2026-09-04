@@ -93,6 +93,70 @@
     cart: []
   };
 
+  // The cart only ever lived in memory, so a refresh — or a trip to the
+  // visualizer and back — silently discarded everything the customer had
+  // configured, price range and all. Persist the parts of state that are the
+  // customer's choices; `qty` is the configurator's own spinner and is meant
+  // to start fresh.
+  var STORAGE_KEY = 'npcs.estimate.v1';
+  var STORAGE_TTL = 7 * 24 * 60 * 60 * 1000;
+
+  function saveState() {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ts: Date.now(),
+        tab: state.tab,
+        win: state.win,
+        winQty: state.winQty,
+        patio: state.patio,
+        entry: state.entry,
+        cart: state.cart
+      }));
+    } catch (e) {
+      // Private browsing and a full quota both throw here. Losing the cart is
+      // the old behaviour, not a reason to break the page.
+    }
+  }
+
+  function restoreState() {
+    var saved = null;
+    try {
+      saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY));
+    } catch (e) {
+      return;
+    }
+    if (!saved || typeof saved !== 'object') return;
+    if (!saved.ts || Date.now() - saved.ts > STORAGE_TTL) {
+      try { window.localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      return;
+    }
+
+    if (['windows', 'patio', 'entry'].indexOf(saved.tab) > -1) state.tab = saved.tab;
+    if (saved.win && typeof saved.win === 'object') {
+      if (find(WINDOW_TIERS, saved.win.tier).id === saved.win.tier) state.win.tier = saved.win.tier;
+      // visualizerSpecLine() already skips values it has no label for.
+      if (saved.win.fromVisualizer) state.win.fromVisualizer = saved.win.fromVisualizer;
+    }
+    if (isFinite(saved.winQty)) state.winQty = Math.min(60, Math.max(1, Math.round(saved.winQty)));
+
+    // Unknown option ids fall through find()'s first-item default, the same as
+    // every other lookup in this file.
+    ['patio', 'entry'].forEach(function (group) {
+      var g = saved[group];
+      if (!g || typeof g !== 'object') return;
+      Object.keys(state[group]).forEach(function (opt) {
+        if (typeof g[opt] === 'string') state[group][opt] = g[opt];
+      });
+    });
+
+    if (Array.isArray(saved.cart)) {
+      state.cart = saved.cart.filter(function (c) {
+        return c && typeof c.title === 'string' && typeof c.meta === 'string'
+          && isFinite(c.qty) && isFinite(c.unit) && isFinite(c.subtotal);
+      });
+    }
+  }
+
   var els = {
     tabs: root.querySelector('.est-tabs'),
     groups: root.querySelector('.est-groups'),
@@ -403,6 +467,8 @@
         els.desc.value = initialNote || 'Estimate page inquiry — no cart configured yet.';
       }
     }
+
+    saveState();
   }
 
   els.tabs.querySelectorAll('.est-tab').forEach(function (btn) {
@@ -415,6 +481,8 @@
   els.dec.addEventListener('click', function () { state.qty = Math.max(1, state.qty - 1); render(); });
   els.inc.addEventListener('click', function () { state.qty = Math.min(30, state.qty + 1); render(); });
   els.addBtn.addEventListener('click', addToCart);
+
+  restoreState();
 
   var params = new URLSearchParams(location.search);
   var tab = params.get('tab');

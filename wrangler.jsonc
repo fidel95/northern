@@ -6,6 +6,9 @@
     "enabled": true
   },
   "assets": {
-    "directory": "."
+    "directory": ".",
+    // Serve the branded /404.html for unknown paths instead of Cloudflare's
+    // generic error page.
+    "not_found_handling": "404-page"
   }
 }
