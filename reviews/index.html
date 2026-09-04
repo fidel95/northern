@@ -206,7 +206,7 @@
     <form class="lead-form" action="https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00Dhm00000374Vz" method="POST">
       <input type="hidden" name="captcha_settings" value="{&quot;keyname&quot;:&quot;npcsv2&quot;,&quot;fallback&quot;:&quot;true&quot;,&quot;orgId&quot;:&quot;00Dhm00000374Vz&quot;,&quot;ts&quot;:&quot;&quot;}">
       <input type="hidden" name="oid" value="00Dhm00000374Vz">
-      <input type="hidden" name="retURL" value="https://npconstructionservices.com/">
+      <input type="hidden" name="retURL" value="https://npconstructionservices.com/thank-you/">
       <input type="hidden" id="lead_source" name="lead_source" value="Web">
 
       <div>
@@ -217,28 +217,28 @@
       <div class="lead-form__row">
         <div>
           <label for="first_name-reviews">First name</label>
-          <input id="first_name-reviews" maxlength="40" name="first_name" type="text" required>
+          <input id="first_name-reviews" maxlength="40" name="first_name" type="text" autocomplete="given-name" required>
         </div>
         <div>
           <label for="last_name-reviews">Last name</label>
-          <input id="last_name-reviews" maxlength="80" name="last_name" type="text" required>
+          <input id="last_name-reviews" maxlength="80" name="last_name" type="text" autocomplete="family-name" required>
         </div>
       </div>
 
       <div class="lead-form__row">
         <div>
           <label for="email-reviews">Email</label>
-          <input id="email-reviews" maxlength="80" name="email" type="text" required>
+          <input id="email-reviews" maxlength="80" name="email" type="email" autocomplete="email" required>
         </div>
         <div>
           <label for="phone-reviews">Phone</label>
-          <input id="phone-reviews" maxlength="40" name="phone" type="text">
+          <input id="phone-reviews" maxlength="40" name="phone" type="tel" inputmode="tel" autocomplete="tel">
         </div>
       </div>
 
       <div>
         <label for="city-reviews">City</label>
-        <input id="city-reviews" maxlength="40" name="city" type="text" placeholder="Carmel, Fishers, Greenwood&hellip;">
+        <input id="city-reviews" maxlength="40" name="city" type="text" autocomplete="address-level2" placeholder="Carmel, Fishers, Greenwood&hellip;">
       </div>
 
       <div>
@@ -318,6 +318,7 @@
 </div>
 
 <script src="../js/leadform.js"></script>
+<script src="/js/analytics.js" defer></script>
 <script src="../js/site.js"></script>
 <script src="../js/motion.js" defer></script>
 <script src="../js/reviews.js" defer></script>
