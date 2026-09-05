@@ -17,6 +17,29 @@ where Marion meets Hamilton.
 
 Requires network on first run (~11 MB, cached in the work directory) and npx.
 
+The map says three things at once, which is why it is three layers:
+
+  the silhouette  every county in Indiana — we will quote anywhere in it
+  the focus band  central and southern Indiana, plus Louisville
+  the five        the counties we are a registered contractor in
+
+The state border is then drawn a second time, over the focus band, with a
+<use>. The band crosses the Ohio into Jefferson County, Kentucky, and without
+that line on top the Louisville end just looks like a bump on Indiana's
+southern edge instead of a piece on the far side of a state border.
+
+The referenced <path> sits in <defs> carrying no class, which is load-bearing.
+A <use> clones the element it points at, class attribute and all, so pointing
+at the drawn outline gave the clone .service-map__outline a second time — and
+that class has a fill. The second pass painted the state back in over the
+focus band, leaving only Louisville, which is outside Indiana, still visible.
+Unclassed, the clone inherits fill and stroke from whichever <use> refers to
+it, which is what lets one path be drawn once filled and once as a line.
+
+The focus band is dissolved into one shape on purpose. It is a region, not a
+list, and drawing sixty-five separate counties would say the opposite — as
+well as costing about four times the markup.
+
 The SVG carries no colours of its own — every fill and stroke is a CSS
 variable applied from .service-map in css/content.css, so the map follows the
 palette in css/base.css rather than freezing a copy of it. That is also why
@@ -35,21 +58,33 @@ import urllib.request
 
 SOURCE = "https://www2.census.gov/geo/tiger/GENZ2023/shp/cb_2023_us_county_500k.zip"
 
-# Indiana. The whole state is drawn as one outline; these nine are filled.
-STATE_FIPS = "18"
+INDIANA, KENTUCKY = "18", "21"
 
-# Registered contractor here, per about/index.html. Filled solid.
+# Registered contractor here, per about/index.html. Drawn county by county,
+# because that page names them one by one and this should agree with it.
 LICENSED = ["Marion", "Hamilton", "Boone", "Hendricks", "Johnson"]
 
-# Served, but from a distance — the cities in service-area/index.html under
-# "And the rest of it." Filled at half strength so the two tiers read apart.
-OUTLYING = ["Tippecanoe", "Howard", "Madison", "Delaware"]
+# Northern Indiana — the part outside the focus band. Everything not listed
+# here is in it, so this list is what defines "central and southern Indiana"
+# for the map. The line sits at the northern edge of Tippecanoe County
+# (40.563N), which puts Lafayette, Kokomo, Marion and Muncie inside the band
+# and Fort Wayne, South Bend and the lake counties outside it.
+NORTHERN = [
+    "Adams", "Allen", "Benton", "Carroll", "Cass", "DeKalb", "Elkhart",
+    "Fulton", "Huntington", "Jasper", "Kosciusko", "LaGrange", "LaPorte",
+    "Lake", "Marshall", "Miami", "Newton", "Noble", "Porter", "Pulaski",
+    "St. Joseph", "Starke", "Steuben", "Wabash", "Wells", "White", "Whitley",
+]
 
-# Monument Circle. Stands in for the office until a street address exists;
-# see the OFFICE line in contact/index.html, which says the same thing.
-OFFICE_LAT, OFFICE_LON = 39.7684, -86.1581
+# The Louisville end of the band. Indiana has a Jefferson County too, hence
+# the state code — filtering on the name alone quietly shades Madison, IN.
+KENTUCKY_FOCUS = ["Jefferson"]
 
-# Viewport width in user units. Height follows from Indiana's proportions.
+# The office, in Crawfordsville. Montgomery County is inside the focus band,
+# so the marker needs to read against that fill.
+OFFICE_LAT, OFFICE_LON = 40.0412, -86.8744
+
+# Viewport width in user units. Height follows from the framed geography.
 WIDTH = 640.0
 PAD = 8.0
 SIMPLIFY = "25%"
@@ -57,6 +92,10 @@ SIMPLIFY = "25%"
 
 def run(cmd):
     subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def mapshaper(*args):
+    run(["npx", "-y", "mapshaper@0.6", *[str(a) for a in args]])
 
 
 def fetch(work):
@@ -69,20 +108,6 @@ def fetch(work):
         urllib.request.urlretrieve(SOURCE, zipped)
     run(["unzip", "-o", "-q", str(zipped), "-d", str(work)])
     return shp
-
-
-def shapes(work):
-    """(counties, state outline) as GeoJSON, projected and simplified."""
-    shp, counties, state = fetch(work), work / "counties.json", work / "state.json"
-    run(["npx", "-y", "mapshaper@0.6", str(shp),
-         "-filter", f'STATEFP=="{STATE_FIPS}"',
-         "-proj", "EPSG:3857",
-         "-simplify", SIMPLIFY, "keep-shapes",
-         "-filter-fields", "NAME",
-         "-o", str(counties), "format=geojson"])
-    run(["npx", "-y", "mapshaper@0.6", str(counties),
-         "-dissolve", "-o", str(state), "format=geojson"])
-    return json.loads(counties.read_text()), json.loads(state.read_text())
 
 
 def rings(node):
@@ -101,6 +126,42 @@ def rings(node):
     raise ValueError(f"unexpected geometry: {kind}")
 
 
+def build(work):
+    """(counties, Indiana outline, focus band) as GeoJSON, projected."""
+    shp = fetch(work)
+    counties = work / "counties.json"
+    mapshaper(shp,
+              "-filter", f'STATEFP=="{INDIANA}" || STATEFP=="{KENTUCKY}"',
+              "-proj", "EPSG:3857",
+              "-simplify", SIMPLIFY, "keep-shapes",
+              "-filter-fields", "NAME,STATEFP",
+              "-o", counties, "format=geojson")
+    everything = json.loads(counties.read_text())
+
+    def where(pred):
+        return [f for f in everything["features"] if pred(f["properties"])]
+
+    indiana = where(lambda p: p["STATEFP"] == INDIANA)
+    focus = where(lambda p: (p["STATEFP"] == INDIANA and p["NAME"] not in NORTHERN)
+                  or (p["STATEFP"] == KENTUCKY and p["NAME"] in KENTUCKY_FOCUS))
+
+    missing = ([n for n in LICENSED + NORTHERN
+                if n not in {f["properties"]["NAME"] for f in indiana}]
+               + [n for n in KENTUCKY_FOCUS
+                  if not any(f["properties"]["NAME"] == n for f in focus)])
+    if missing:
+        sys.exit(f"county not found in the source data: {', '.join(missing)}")
+
+    def dissolve(features, name):
+        src, out = work / f"{name}-in.json", work / f"{name}.json"
+        src.write_text(json.dumps({"type": "FeatureCollection", "features": features}))
+        mapshaper(src, "-dissolve", "-o", out, "format=geojson")
+        return json.loads(out.read_text())
+
+    return ({f["properties"]["NAME"]: f for f in indiana},
+            dissolve(indiana, "state"), dissolve(focus, "focus"))
+
+
 def mercator(lat, lon):
     x = lon * 20037508.34 / 180
     y = math.log(math.tan((90 + lat) * math.pi / 360)) / (math.pi / 180)
@@ -116,52 +177,42 @@ def main():
     if args.keep:
         work = pathlib.Path("build")
         work.mkdir(exist_ok=True)
-        counties, state = shapes(work)
+        by_name, state, focus = build(work)
     else:
         with tempfile.TemporaryDirectory() as tmp:
-            counties, state = shapes(pathlib.Path(tmp))
+            by_name, state, focus = build(pathlib.Path(tmp))
 
-    outline = rings(state)
-    xs = [p[0] for r in outline for p in r]
-    ys = [p[1] for r in outline for p in r]
+    # Frame on both layers: Louisville hangs below Indiana's southern border.
+    framed = rings(state) + rings(focus)
+    xs = [p[0] for r in framed for p in r]
+    ys = [p[1] for r in framed for p in r]
     minx, maxx, miny, maxy = min(xs), max(xs), min(ys), max(ys)
     scale = WIDTH / (maxx - minx)
-    height = round((maxy - miny) * scale, 1)
 
     def place(x, y):
         return round((x - minx) * scale + PAD, 1), round((maxy - y) * scale + PAD, 1)
 
     def path(node):
-        out = []
-        for ring in rings(node):
-            pts = [place(x, y) for x, y in ring]
-            out.append("M" + " ".join(f"{x},{y}" for x, y in pts) + "Z")
-        return "".join(out)
-
-    by_name = {f["properties"]["NAME"]: f for f in counties["features"]}
-    missing = [n for n in LICENSED + OUTLYING if n not in by_name]
-    if missing:
-        sys.exit(f"county not found in the source data: {', '.join(missing)}")
+        return "".join(
+            "M" + " ".join(f"{x},{y}" for x, y in (place(*p) for p in ring)) + "Z"
+            for ring in rings(node))
 
     box_w = round(WIDTH + PAD * 2, 1)
-    box_h = round(height + PAD * 2, 1)
-    served = len(LICENSED) + len(OUTLYING)
-
-    def tier(names, css):
-        return "\n".join(
-            f'    <path class="service-map__county service-map__county--{css}" '
-            f'd="{path(by_name[n])}"><title>{n} County</title></path>'
-            for n in names)
-
+    box_h = round((maxy - miny) * scale + PAD * 2, 1)
+    counties = "\n".join(
+        f'    <path class="service-map__county" d="{path(by_name[n])}">'
+        f'<title>{n} County</title></path>' for n in LICENSED)
     ox, oy = place(*mercator(OFFICE_LAT, OFFICE_LON))
 
     print(f'''<svg class="service-map__svg" viewBox="0 0 {box_w} {box_h}" role="img" aria-labelledby="service-map-title service-map-desc">
   <title id="service-map-title">Where Northern Pines works</title>
-  <desc id="service-map-desc">A map of Indiana with {served} counties marked: {", ".join(LICENSED)}, where the company is a registered contractor, and {", ".join(OUTLYING)}, which it also serves. The office is in Indianapolis, in Marion County. Every county is also named in the list that accompanies the map.</desc>
-  <path class="service-map__outline" d="{path(state)}"/>
+  <desc id="service-map-desc">A map of Indiana in three shades. The whole state is outlined, because the company quotes anywhere in it. Central and southern Indiana are filled, along with Jefferson County in Kentucky, which is Louisville — that is where the work is concentrated. Filled brightest are the five counties the company is a registered contractor in: {", ".join(LICENSED)}. A dot marks the office at Crawfordsville, in Montgomery County. All of this is written out in the list that accompanies the map.</desc>
+  <defs><path id="service-map-indiana" d="{path(state)}"/></defs>
+  <use href="#service-map-indiana" class="service-map__outline"/>
+  <path class="service-map__focus" d="{path(focus)}"><title>Central and southern Indiana, and the Louisville area</title></path>
+  <use href="#service-map-indiana" class="service-map__border"/>
   <g class="service-map__counties">
-{tier(OUTLYING, "outlying")}
-{tier(LICENSED, "licensed")}
+{counties}
   </g>
   <g class="service-map__office" aria-hidden="true">
     <circle class="service-map__office-ring" cx="{ox}" cy="{oy}" r="14"/>
