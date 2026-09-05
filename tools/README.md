@@ -29,6 +29,32 @@ To move to a new three version: bump `V` at the top, run it, and delete
 anything it no longer writes. The import map in `visualizer/index.html` and the
 decoder paths in `js/visualizer/houseLoader.js` point at the result.
 
+## `make-service-map.py`
+
+Prints the inline `<svg>` for the service-area map in `contact/index.html`.
+
+```sh
+python3 tools/make-service-map.py
+```
+
+Paste the output over the existing `<svg class="service-map__svg">` inside
+`<figure class="service-map">`. Like `csp-hash.py`, it computes something you
+then paste; it does not edit the page, so the surrounding markup stays hand-
+maintained. First run downloads ~11 MB of Census boundaries and shells out to
+`npx mapshaper`; `--keep` caches that in `./build` instead of a temp dir.
+
+Only the geometry is generated. Every fill and stroke comes from
+`.service-map` in `css/content.css`, so the map follows the palette in
+`css/base.css` instead of freezing a copy of it — which is also why it is
+inlined rather than loaded with `<img>`, since an `<img>`-loaded SVG is a
+closed document that inherits nothing from the page.
+
+Edit the county lists at the top of the script to change what is shaded. The
+two tiers are deliberately not the same list: `LICENSED` matches the counties
+`about/index.html` claims registration in, `OUTLYING` matches the cities under
+"And the rest of it." on `service-area/index.html`. If either page changes,
+change this too — nothing checks that they agree.
+
 ## Fonts
 
 The three families are self-hosted under `assets/fonts/`, with the `@font-face`

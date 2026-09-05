@@ -101,6 +101,36 @@
 }
 .art-slot span { font-family: var(--font-label); font-size: 11px; letter-spacing: 0.1em; color: var(--text-muted); text-align: center; padding: 0 14px; line-height: 1.7; white-space: pre-line; }
 
+/* ---------- Service-area map (contact page) ---------- */
+/* Geometry is generated — tools/make-service-map.py. Colour lives here and
+   only here, so the map tracks the palette instead of freezing a copy of it. */
+.service-map { border: 1px solid var(--line-hairline); background: var(--surface-inset); padding: 26px 24px 24px; margin: 0; container-type: inline-size; }
+/* The column this sits in is fluid (.contact-grid is auto-fit, no breakpoint),
+   so the legend moves beside the map on the figure's own width, not the
+   viewport's. */
+.service-map__inner { display: grid; gap: 22px; }
+@container (min-width: 430px) {
+  .service-map__inner { grid-template-columns: 232px 1fr; gap: 30px; align-items: center; }
+  .service-map__legend { margin-top: 0; }
+}
+.service-map__svg { display: block; width: min(100%, 262px); height: auto; margin-inline: auto; }
+.service-map__outline { fill: var(--surface-raised); stroke: var(--line-strong); stroke-width: 1.6; stroke-linejoin: round; }
+.service-map__county { stroke: var(--surface-inset); stroke-width: 0.9; stroke-linejoin: round; transition: fill var(--dur-fast) var(--ease-standard); }
+.service-map__county--licensed { fill: var(--surface-accent); }
+.service-map__county--outlying { fill: var(--acid-600); }
+@media (hover: hover) {
+  .service-map__county:hover { fill: var(--state-hover-accent); }
+}
+.service-map__office-ring { fill: none; stroke: var(--text-on-accent); stroke-width: 1.6; opacity: .55; }
+.service-map__office-dot { fill: var(--text-on-accent); }
+.service-map__legend { margin-top: 4px; display: flex; flex-direction: column; gap: 13px; }
+.service-map__key { display: grid; grid-template-columns: 10px 1fr; gap: 0 11px; align-items: start; margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--text-body); text-wrap: pretty; }
+.service-map__key b { display: block; font-family: var(--font-label); font-size: 10.5px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+.service-map__swatch { width: 10px; height: 10px; margin-top: 3px; background: var(--surface-accent); }
+.service-map__swatch--outlying { background: var(--acid-600); }
+.service-map__swatch--office { border-radius: var(--radius-pill); background: var(--text-strong); }
+.service-map__note { margin: 0; padding-top: 13px; border-top: 1px solid var(--line-hairline); font-size: 13px; line-height: 1.6; color: var(--text-muted); text-wrap: pretty; }
+
 /* ---------- Legal pages (Privacy / Terms) ---------- */
 .legal-banner { background: var(--surface-inset); border-bottom: 1px solid var(--line-hairline); padding: 20px 0; }
 .legal-banner p { font-family: var(--font-label); font-size: 11.5px; letter-spacing: 0.05em; color: var(--text-muted); margin: 0; line-height: 1.8; }

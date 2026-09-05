@@ -23,3 +23,6 @@ northern-pines-website-build-prompt.md
 # Wrangler (Cloudflare Workers) local dev artifacts
 .wrangler/
 .dev.vars
+
+# Cached Census boundary download (tools/make-service-map.py --keep)
+/build/
