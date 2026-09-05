@@ -19,6 +19,10 @@ Requires network on first run (~11 MB, cached in the work directory) and npx.
 
 The map says three things at once, which is why it is three layers:
 
+There is deliberately no marker on the office. The map answers "do you come
+to me?", and a dot on Crawfordsville answers "where do you sit?" — which
+invites a homeowner in Carmel or New Albany to measure the distance to it.
+
   the silhouette  every county in Indiana — we will quote anywhere in it
   the focus band  central and southern Indiana, plus Louisville
   the five        the counties we are a registered contractor in
@@ -49,7 +53,6 @@ closed document that inherits nothing from the page.
 
 import argparse
 import json
-import math
 import pathlib
 import subprocess
 import sys
@@ -79,10 +82,6 @@ NORTHERN = [
 # The Louisville end of the band. Indiana has a Jefferson County too, hence
 # the state code — filtering on the name alone quietly shades Madison, IN.
 KENTUCKY_FOCUS = ["Jefferson"]
-
-# The office, in Crawfordsville. Montgomery County is inside the focus band,
-# so the marker needs to read against that fill.
-OFFICE_LAT, OFFICE_LON = 40.0412, -86.8744
 
 # Viewport width in user units. Height follows from the framed geography.
 WIDTH = 640.0
@@ -162,12 +161,6 @@ def build(work):
             dissolve(indiana, "state"), dissolve(focus, "focus"))
 
 
-def mercator(lat, lon):
-    x = lon * 20037508.34 / 180
-    y = math.log(math.tan((90 + lat) * math.pi / 360)) / (math.pi / 180)
-    return x, y * 20037508.34 / 180
-
-
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--keep", action="store_true",
@@ -202,21 +195,16 @@ def main():
     counties = "\n".join(
         f'    <path class="service-map__county" d="{path(by_name[n])}">'
         f'<title>{n} County</title></path>' for n in LICENSED)
-    ox, oy = place(*mercator(OFFICE_LAT, OFFICE_LON))
 
     print(f'''<svg class="service-map__svg" viewBox="0 0 {box_w} {box_h}" role="img" aria-labelledby="service-map-title service-map-desc">
   <title id="service-map-title">Where Northern Pines works</title>
-  <desc id="service-map-desc">A map of Indiana in three shades. The whole state is outlined, because the company quotes anywhere in it. Central and southern Indiana are filled, along with Jefferson County in Kentucky, which is Louisville — that is where the work is concentrated. Filled brightest are the five counties the company is a registered contractor in: {", ".join(LICENSED)}. A dot marks the office at Crawfordsville, in Montgomery County. All of this is written out in the list that accompanies the map.</desc>
+  <desc id="service-map-desc">A map of Indiana in three shades. The whole state is outlined, because the company quotes anywhere in it. Central and southern Indiana are filled, along with Jefferson County in Kentucky, which is Louisville — that is where the work is concentrated. Filled brightest are the five counties the company is a registered contractor in: {", ".join(LICENSED)}. All of this is written out in the list that accompanies the map.</desc>
   <defs><path id="service-map-indiana" d="{path(state)}"/></defs>
   <use href="#service-map-indiana" class="service-map__outline"/>
   <path class="service-map__focus" d="{path(focus)}"><title>Central and southern Indiana, and the Louisville area</title></path>
   <use href="#service-map-indiana" class="service-map__border"/>
   <g class="service-map__counties">
 {counties}
-  </g>
-  <g class="service-map__office" aria-hidden="true">
-    <circle class="service-map__office-ring" cx="{ox}" cy="{oy}" r="14"/>
-    <circle class="service-map__office-dot" cx="{ox}" cy="{oy}" r="4.5"/>
   </g>
 </svg>''')
 
