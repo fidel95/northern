@@ -33,15 +33,21 @@
       { id: 'triple', name: 'Triple-Pane Energy', add: 95 },
       { id: 'tinted', name: 'Tinted / Privacy', add: 60 }
     ],
+    // Doors are quoted as installed ranges rather than point prices. What a
+    // door costs moves with the opening far more than a window does, so a
+    // single figure here would be precision we do not have. Multi-slide gets
+    // no range at all: those are priced by the linear foot and start where
+    // this configurator's largest size class runs out, so it asks for a
+    // measure instead of guessing.
     patioStyles: [
-      { id: 'sliding', name: 'Sliding', price: 1450 },
-      { id: 'french', name: 'Hinged / French', price: 2100 },
-      { id: 'multislide', name: 'Multi-Slide', price: 3200 }
+      { id: 'sliding', name: 'Sliding', low: 1800, high: 3400 },
+      { id: 'french', name: 'Hinged / French', low: 2500, high: 5000 },
+      { id: 'multislide', name: 'Multi-Slide', quoteOnly: true, from: 5000 }
     ],
     entryStyles: [
-      { id: 'single', name: 'Single Door', price: 1350 },
-      { id: 'double', name: 'Double Door', price: 2600 },
-      { id: 'sidelights', name: 'With Sidelights', price: 1900 }
+      { id: 'single', name: 'Single Door', low: 900, high: 2400 },
+      { id: 'double', name: 'Double Door', low: 2000, high: 5000 },
+      { id: 'sidelights', name: 'With Sidelights', low: 1900, high: 4600 }
     ],
     entryFinish: [
       { id: 'paint', name: 'Paint-Grade', add: 0 },
@@ -78,9 +84,9 @@
     return parts.join(' · ');
   }
 
-  var RANGE_SPREAD = 12;
   var initialNote = '';
   var money = function (n) { return '$' + Math.round(n).toLocaleString('en-US'); };
+  var moneyRange = function (r) { return money(r.low) + ' – ' + money(r.high); };
   var find = function (list, id) { return list.filter(function (x) { return x.id === id; })[0] || list[0]; };
 
   var state = {
@@ -98,7 +104,7 @@
   // configured, price range and all. Persist the parts of state that are the
   // customer's choices; `qty` is the configurator's own spinner and is meant
   // to start fresh.
-  var STORAGE_KEY = 'npcs.estimate.v1';
+  var STORAGE_KEY = 'npcs.estimate.v2';
   var STORAGE_TTL = 7 * 24 * 60 * 60 * 1000;
 
   function saveState() {
@@ -152,7 +158,8 @@
     if (Array.isArray(saved.cart)) {
       state.cart = saved.cart.filter(function (c) {
         return c && typeof c.title === 'string' && typeof c.meta === 'string'
-          && isFinite(c.qty) && isFinite(c.unit) && isFinite(c.subtotal);
+          && isFinite(c.qty) && isFinite(c.unitLow) && isFinite(c.unitHigh)
+          && isFinite(c.subLow) && isFinite(c.subHigh);
       });
     }
   }
@@ -178,16 +185,24 @@
     desc: document.getElementById('description-estimate')
   };
 
-  function unitPrice() {
-    var t = state.tab;
-    if (t === 'patio') {
+  // The installed range for the current configuration, or null when the style
+  // is quote-only. Options move both ends together rather than narrowing the
+  // band: a wider opening costs more at the cheap end of a product and at the
+  // dear end alike.
+  function unitRange() {
+    if (state.tab === 'patio') {
       var p = state.patio;
-      return find(PRICING.patioStyles, p.style).price * find(PRICING.sizes, p.size).mult
-        + find(PRICING.frameColors, p.color).add + find(PRICING.glass, p.glass).add;
+      var ps = find(PRICING.patioStyles, p.style);
+      if (ps.quoteOnly) return null;
+      var mult = find(PRICING.sizes, p.size).mult;
+      var addP = find(PRICING.frameColors, p.color).add + find(PRICING.glass, p.glass).add;
+      return { low: ps.low * mult + addP, high: ps.high * mult + addP };
     }
     var e = state.entry;
-    return find(PRICING.entryStyles, e.style).price
-      + find(PRICING.entryFinish, e.finish).add + find(PRICING.entryHardware, e.hardware).add;
+    var es = find(PRICING.entryStyles, e.style);
+    if (es.quoteOnly) return null;
+    var addE = find(PRICING.entryFinish, e.finish).add + find(PRICING.entryHardware, e.hardware).add;
+    return { low: es.low + addE, high: es.high + addE };
   }
 
   function noun() { return state.tab === 'patio' ? 'patio door' : 'entry door'; }
@@ -210,7 +225,11 @@
     btn.appendChild(nameWrap);
     var priceEl = document.createElement('span');
     priceEl.className = 'est-opt__price';
-    priceEl.textContent = kind === 'size' ? o.sub : (o.price !== undefined ? money(o.price) : (o.add > 0 ? '+' + money(o.add) : 'Included'));
+    priceEl.textContent = kind === 'size' ? o.sub
+      : o.quoteOnly ? 'From ' + money(o.from)
+      : o.low !== undefined ? moneyRange(o)
+      : o.add > 0 ? '+' + money(o.add)
+      : 'Included';
     btn.appendChild(priceEl);
     btn.addEventListener('click', function () {
       state[bucket][key] = o.id;
@@ -233,7 +252,8 @@
   }
 
   function addToCart() {
-    var unit = unitPrice();
+    var unit = unitRange();
+    if (!unit) return;
     var title, meta;
     if (state.tab === 'patio') {
       var p = state.patio;
@@ -245,7 +265,11 @@
       title = find(PRICING.entryStyles, e.style).name;
       meta = [find(PRICING.entryFinish, e.finish).name, find(PRICING.entryHardware, e.hardware).name + ' hardware'].join(' · ');
     }
-    state.cart.push({ key: Date.now() + Math.random(), title: title, meta: meta, qty: state.qty, unit: unit, subtotal: unit * state.qty });
+    state.cart.push({
+      key: Date.now() + Math.random(), title: title, meta: meta, qty: state.qty,
+      unitLow: unit.low, unitHigh: unit.high,
+      subLow: unit.low * state.qty, subHigh: unit.high * state.qty
+    });
     state.qty = 1;
     render();
   }
@@ -403,7 +427,7 @@
     els.qtyRow.style.display = '';
     els.addBtn.style.display = '';
     els.note.style.display = '';
-    els.note.textContent = 'PRICING NOTE — door figures are illustrative placeholders pending the real cost book. Replace PRICING in js/estimate.js before launch.';
+    els.note.textContent = 'These are installed ranges — they cover the door, tear-out, installation and disposal. What a door costs moves with the opening, so the on-site measure sets the final figure. Applicable sales tax is added at contract.';
     els.cartHead.textContent = 'Your project';
     els.rangeLabel.textContent = 'ESTIMATED RANGE, INSTALLED';
 
@@ -420,10 +444,24 @@
       els.groups.appendChild(group('Hardware', PRICING.entryHardware, e.hardware, 'entry', 'hardware'));
     }
 
-    els.qtyNum.textContent = state.qty;
-    els.unitLabel.textContent = 'Approx. per ' + noun() + ', installed';
-    els.unitPrice.textContent = money(unitPrice());
-    els.addBtn.textContent = 'Add ' + state.qty + ' ' + noun() + (state.qty > 1 ? 's' : '') + ' to estimate';
+    var unit = unitRange();
+    if (unit) {
+      els.qtyNum.textContent = state.qty;
+      els.unitLabel.textContent = 'Installed range per ' + noun();
+      els.unitPrice.textContent = moneyRange(unit);
+      els.addBtn.textContent = 'Add ' + state.qty + ' ' + noun() + (state.qty > 1 ? 's' : '') + ' to estimate';
+    } else {
+      // Nothing honest to put in the box, so stop collecting a quantity and
+      // send them to the measure instead of leaving them at a dead end.
+      var qs = state.tab === 'patio'
+        ? find(PRICING.patioStyles, state.patio.style)
+        : find(PRICING.entryStyles, state.entry.style);
+      els.qtyRow.style.display = 'none';
+      els.addBtn.style.display = 'none';
+      els.unitLabel.textContent = 'Priced by the opening width';
+      els.unitPrice.textContent = 'Quote only';
+      els.note.textContent = qs.name + ' doors are priced by the width of the opening rather than by the unit, and they start around ' + money(qs.from) + ' installed. Send the form below and we will measure yours and quote it properly.';
+    }
 
     els.cartCount.textContent = state.cart.reduce(function (a, c) { return a + c.qty; }, 0) + ' UNITS';
     els.cartBody.innerHTML = '';
@@ -449,7 +487,7 @@
         title.textContent = c.qty + '\u00d7 ' + c.title;
         var meta = document.createElement('span');
         meta.className = 'est-cart__item-meta';
-        meta.textContent = c.meta + ' \u00b7 ' + money(c.unit) + ' each';
+        meta.textContent = c.meta + ' \u00b7 ' + moneyRange({ low: c.unitLow, high: c.unitHigh }) + ' each';
         left.appendChild(title);
         left.appendChild(meta);
 
@@ -457,7 +495,7 @@
         right.className = 'est-cart__item-right';
         var sub = document.createElement('span');
         sub.className = 'est-cart__item-sub';
-        sub.textContent = money(c.subtotal);
+        sub.textContent = moneyRange({ low: c.subLow, high: c.subHigh });
         var removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'est-cart__remove';
@@ -475,14 +513,14 @@
       });
     }
 
-    var total = state.cart.reduce(function (a, c) { return a + c.subtotal; }, 0);
+    var low = state.cart.reduce(function (a, c) { return a + c.subLow; }, 0);
+    var high = state.cart.reduce(function (a, c) { return a + c.subHigh; }, 0);
     var itemCount = state.cart.reduce(function (a, c) { return a + c.qty; }, 0);
-    var low = total * (1 - RANGE_SPREAD / 100), high = total * (1 + (RANGE_SPREAD + 3) / 100);
 
     if (state.cart.length) {
       els.rangeBlock.style.display = '';
       els.rangeText.textContent = money(low) + ' – ' + money(high);
-      els.rangeNote.textContent = 'Includes tear-out, installation, disposal, and the lifetime glass and frame warranty. Final pricing follows the on-site measure.';
+      els.rangeNote.textContent = 'Includes tear-out, installation, disposal, and the lifetime glass and frame warranty. Applicable sales tax is added at contract. Final pricing follows the on-site measure.';
     } else {
       els.rangeBlock.style.display = 'none';
     }
@@ -490,7 +528,7 @@
     if (els.desc) {
       if (state.cart.length) {
         els.desc.value = 'INSTANT ESTIMATE CART\n' +
-          state.cart.map(function (c) { return c.qty + '× ' + c.title + ' — ' + c.meta + ' — ' + money(c.subtotal); }).join('\n') +
+          state.cart.map(function (c) { return c.qty + '× ' + c.title + ' — ' + c.meta + ' — ' + moneyRange({ low: c.subLow, high: c.subHigh }); }).join('\n') +
           '\n\nEstimated installed range: ' + money(low) + ' – ' + money(high) +
           '\n(' + itemCount + (itemCount === 1 ? ' unit' : ' units') + ' configured on the website.)' +
           (initialNote ? '\n\n' + initialNote : '');
