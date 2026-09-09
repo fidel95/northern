@@ -392,6 +392,11 @@
       els.note.style.display = 'none';
       renderWindowsAside();
       updateDescriptionForWindows();
+      // This branch returns before the saveState() that ends render(), so it
+      // has to persist on its own. Without this the tier and the window count
+      // never reach localStorage, and state.tab keeps whatever a door tab last
+      // wrote — so a trip to the visualizer and back lands on Entry Doors.
+      saveState();
       return;
     }
 
