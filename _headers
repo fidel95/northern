@@ -24,6 +24,11 @@
   Cross-Origin-Opener-Policy: same-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), interest-cohort=()
 
+# Staff tools. Kept out of search here rather than with a robots.txt Disallow,
+# which would advertise the path and stop crawlers from ever seeing this header.
+/internal/*
+  X-Robots-Tag: noindex, nofollow
+
 # Fingerprinted-by-content assets that never change under the same name.
 /assets/fonts/*
   Cache-Control: public, max-age=31536000, immutable

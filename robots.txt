@@ -2,7 +2,8 @@
 User-agent: *
 Allow: /
 
-# No admin or internal tooling paths exist yet. Add Disallow rules here
-# if a CMS, staging path, or internal estimator admin is introduced.
+# /internal/ holds staff tools. It is deliberately not disallowed here: a
+# Disallow line would advertise the path, and crawlers that obey it never see
+# the noindex header _headers sends for it.
 
 Sitemap: https://npconstructionservices.com/sitemap.xml
