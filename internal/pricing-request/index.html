@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pricing requests | Northern Pines (internal)</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#161618">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="stylesheet" href="/css/pricing-request.css">
+<script type="module" src="/js/pricing-request/app.js"></script>
+</head>
+<body>
+
+<div class="app">
+  <header class="app__bar">
+    <h1>Pricing requests</h1>
+    <p>Internal tool, not linked from the site. Everything you enter stays in this browser until you export it.</p>
+  </header>
+
+  <aside class="app__side">
+    <section class="panel" aria-labelledby="job-h">
+      <h2 id="job-h">Job</h2>
+      <label class="field"><span>Open job</span><select id="job-select"></select></label>
+      <label class="field"><span>Job ref</span><input id="job-ref" type="text" maxlength="40" placeholder="e.g. NP-2026-0142" autocomplete="off"></label>
+      <label class="field"><span>Request date</span><input id="job-date" type="date"></label>
+      <div class="row">
+        <button type="button" id="job-new" class="btn">New job</button>
+        <button type="button" id="job-delete" class="btn btn--danger">Delete job</button>
+      </div>
+      <div class="row">
+        <button type="button" id="job-export" class="btn">Export file</button>
+        <button type="button" id="job-import" class="btn">Import file</button>
+        <input type="file" id="job-import-file" accept="application/json,.json" hidden>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="items-h">
+      <h2 id="items-h">Openings</h2>
+      <ul id="item-list" class="items"></ul>
+      <div class="row">
+        <button type="button" id="add-window" class="btn">+ Window</button>
+        <button type="button" id="add-patio" class="btn">+ Patio door</button>
+        <button type="button" id="add-entry" class="btn">+ Entry door</button>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="print-h">
+      <h2 id="print-h">Print or save PDF</h2>
+      <p class="hint">One PDF per supplier. In the print dialog, choose "Save as PDF".</p>
+      <div id="print-bar" class="print-bar"></div>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </aside>
+
+  <main class="app__editor" id="editor" aria-label="Edit opening"></main>
+
+  <section class="app__preview" aria-label="Sheet preview">
+    <div id="preview"></div>
+  </section>
+</div>
+
+<div id="print-root"></div>
+
+</body>
+</html>
