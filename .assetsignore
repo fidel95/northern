@@ -34,3 +34,11 @@ tools
 prototype-files-needed
 *.zip
 northern-pines-website-build-prompt.md
+
+# Design-system documentation: the component examples, the token export and
+# the how-to. The site serves tokens.css, components.css, fonts/ and images/
+# from design-system/; the rest is reference for whoever edits the site
+# (every README.md is already excluded above).
+design-system/components
+design-system/tokens.json
+design-system/HOW-TO-USE.md

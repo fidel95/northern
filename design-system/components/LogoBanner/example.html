@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head><link rel="stylesheet" href="../../tokens.css"><link rel="stylesheet" href="../../components.css"><meta charset="utf-8"><title>Logo banner</title>
+<style>
+  body{margin:0}
+  .wrap{padding:24px;display:flex;flex-direction:column;gap:16px}
+  .np-banner{display:block;width:100%;height:auto;border-radius:var(--radius-lg);border:1px solid var(--line)}
+  .row{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start}
+  figure{margin:0;display:flex;flex-direction:column;gap:8px}
+  figcaption{font-size:13px;line-height:18px;color:var(--ink-muted)}
+</style></head>
+<body class="np-root">
+<div class="wrap">
+  <figure>
+    <img class="np-banner" src="../../images/npcs-banner-website-2400x800.jpg" alt="Northern Pines Construction Services" width="2400" height="800">
+    <figcaption>Website · 2400×800 · top of the home page, Linktree header</figcaption>
+  </figure>
+  <div class="row">
+    <figure>
+      <img class="np-banner" src="../../images/npcs-banner-facebook-1640x624.jpg" alt="Northern Pines Construction Services" width="1640" height="624">
+      <figcaption>Facebook cover · 1640×624</figcaption>
+    </figure>
+    <figure>
+      <img class="np-banner" src="../../images/npcs-banner-share-1200x630.jpg" alt="Northern Pines Construction Services" width="1200" height="630">
+      <figcaption>Link preview (og:image) · 1200×630</figcaption>
+    </figure>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,76 @@
+/* Northern Pines tokens. Dark (Forest) is default; set data-theme="light" for Fog. */
+@font-face { font-family: 'Cinzel'; src: url('fonts/Cinzel-Variable.woff2') format('woff2'); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: 'Inter'; src: url('fonts/Inter-Variable.woff2') format('woff2'); font-weight: 400 700; font-display: swap; }
+:root, [data-theme="dark"] {
+  --surface-000: #141a17;
+  --surface-100: #1b231e;
+  --surface-200: #232c26;
+  --surface-300: #2e3830;
+  --ink: #fcf9ef;
+  --ink-muted: #b3b6af;
+  --line: #3f483e;
+  --line-strong: #7f857a;
+  --pine: #232c26;
+  --on-pine: #fcf9ef;
+  --mist: #a8aba3;
+  --lichen: #c9cc6b;
+  --on-lichen: #1b231e;
+  --lichen-text: #d4d77e;
+  --focus-ring: var(--lichen-text);
+  --scrim-photo: rgba(16, 21, 18, 0.64);
+  --glass: rgba(35, 44, 38, 0.38);
+  --status-success: #8ec5d6;
+  --status-warning: #e3c25a;
+  --status-danger: #f09a6b;
+  --shadow-lift: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+[data-theme="light"] {
+  --surface-000: #e9ece6;
+  --surface-100: #f2f3ef;
+  --surface-200: #fbfbf8;
+  --surface-300: #e1e5dd;
+  --ink: #1b231e;
+  --ink-muted: #4e5446;
+  --line: #d0d4cb;
+  --line-strong: #6c7060;
+  --pine: #232c26;
+  --on-pine: #fcf9ef;
+  --mist: #c2c3be;
+  --lichen: #5a5e16;
+  --on-lichen: #fcf9ef;
+  --lichen-text: #545813;
+  --focus-ring: var(--lichen-text);
+  --scrim-photo: rgba(16, 21, 18, 0.64);
+  --glass: rgba(35, 44, 38, 0.38);
+  --status-success: #2b5f73;
+  --status-warning: #7a5c00;
+  --status-danger: #a8431c;
+  --shadow-lift: 0 12px 32px rgba(27, 35, 30, 0.12);
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+  --blur-fog: 14px;
+  --font-display: Cinzel, "Trajan Pro", Georgia, serif;
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.display-xl { font-family: var(--font-display); font-size: 56px; line-height: 60px; font-weight: 600; letter-spacing: 0.02em; }
+.display-l { font-family: var(--font-display); font-size: 40px; line-height: 46px; font-weight: 600; letter-spacing: 0.02em; }
+.heading { font-family: var(--font-display); font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: 0.01em; }
+.title { font-family: var(--font-sans); font-size: 20px; line-height: 28px; font-weight: 600; }
+.body-l { font-family: var(--font-sans); font-size: 18px; line-height: 28px; font-weight: 400; }
+.body { font-family: var(--font-sans); font-size: 16px; line-height: 24px; font-weight: 400; }
+.small { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 400; }
+.button { font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: 0.01em; }
+.eyebrow { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.16em; }

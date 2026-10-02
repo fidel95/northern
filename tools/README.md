@@ -55,6 +55,41 @@ two tiers are deliberately not the same list: `LICENSED` matches the counties
 "And the rest of it." on `service-area/index.html`. If either page changes,
 change this too — nothing checks that they agree.
 
+## `make-treeline.py`
+
+Writes `assets/brand/pines-far.svg` and `assets/brand/pines-near.svg`, the
+two pine-silhouette strips along section edges (the hero's lower edge, the
+top of the footer).
+
+```sh
+python3 tools/make-treeline.py
+```
+
+They are never shown as images. `.treeline` in `css/site.css` uses them as
+CSS masks over a design-system colour, so the trees take the colour of the
+section they grow out of. The seed is fixed; change it to get a different
+skyline.
+
+## `make-house-art.py`
+
+Draws the line-art house that stands in for job photos on the home page's
+service cards (roofing, gutters, siding, doors, concrete — everything we
+don't yet have our own photographs of), and the labelled house in "One
+contractor. Multiple projects."
+
+```sh
+python3 tools/make-house-art.py
+```
+
+It rewrites the block between `<!-- house-art:start -->` and
+`<!-- house-art:end -->` in every page that carries those markers. Pages
+then show it with `<use href="#np-house"/>`, choosing the crop with the outer
+`viewBox` and the drawn-in part with `--hl-roof`, `--hl-gutter`,
+`--hl-siding`, `--hl-window`, `--hl-door` or `--hl-concrete` set to `1`.
+Colours come from `css/site.css`, not from the drawing. When real photos of
+a service exist, swap that card's `<svg>` for a `<picture>`; the drawing is
+a placeholder, not a stand-in for our work.
+
 ## Fonts
 
 The three families are self-hosted under `assets/fonts/`, with the `@font-face`

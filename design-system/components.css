@@ -1,0 +1,122 @@
+/* Northern Pines — component styles. Needs tokens.css loaded first. */
+
+/* ---------- base helpers ---------- */
+.np-root { background: var(--surface-100); color: var(--ink); font-family: var(--font-sans); font-size: 16px; line-height: 24px; -webkit-font-smoothing: antialiased; }
+.np-eyebrow { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--lichen-text); margin: 0; }
+.np-display { font-family: var(--font-display); font-weight: 600; letter-spacing: 0.02em; color: var(--ink); margin: 0; }
+.np-focus:focus-visible,
+.np-btn:focus-visible, .np-tile:focus-visible, .np-card:focus-within, .np-input:focus-visible {
+  outline: 2px solid var(--focus-ring); outline-offset: 2px;
+}
+
+/* ---------- Button ---------- */
+.np-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: 44px; padding: 0 var(--space-4);
+  border-radius: var(--radius-md); border: 1px solid transparent;
+  font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: 0.01em;
+  text-decoration: none; cursor: pointer; white-space: nowrap;
+  transition: background-color 160ms ease-out, border-color 160ms ease-out, color 160ms ease-out;
+}
+.np-btn--primary { background: var(--lichen); color: var(--on-lichen); }
+.np-btn--primary:hover { filter: brightness(1.06); }
+.np-btn--outline { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+.np-btn--outline:hover { background: var(--surface-300); }
+.np-btn--quiet { background: transparent; color: var(--lichen-text); padding: 0 var(--space-2); }
+.np-btn--quiet:hover { text-decoration: underline; text-underline-offset: 4px; }
+.np-btn--pine { background: var(--pine); color: var(--on-pine); border-color: var(--line); }
+.np-btn--sm { min-height: 36px; padding: 0 var(--space-3); font-size: 14px; }
+.np-btn--lg { min-height: 52px; padding: 0 var(--space-6); font-size: 16px; }
+.np-btn--block { display: flex; width: 100%; }
+.np-btn[disabled], .np-btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; filter: none; }
+
+/* ---------- Badge ---------- */
+.np-badge {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: 2px var(--space-2); border-radius: var(--radius-sm);
+  border: 1px solid var(--line); background: var(--surface-300); color: var(--ink);
+  font-family: var(--font-sans); font-size: 12px; line-height: 18px; font-weight: 600; letter-spacing: 0.02em;
+}
+.np-badge--lichen { color: var(--lichen-text); border-color: var(--lichen-text); background: transparent; }
+.np-badge--success { color: var(--status-success); border-color: var(--status-success); background: transparent; }
+.np-badge--warning { color: var(--status-warning); border-color: var(--status-warning); background: transparent; }
+.np-badge--danger  { color: var(--status-danger);  border-color: var(--status-danger);  background: transparent; }
+.np-badge__dot { width: 6px; height: 6px; border-radius: var(--radius-full); background: currentColor; }
+
+/* ---------- Photo section (fog-pines backdrop) ---------- */
+/* Always pair with data-theme="dark" so tokens resolve to their forest values over the photo. */
+.np-photo {
+  position: relative; isolation: isolate; color: var(--on-pine);
+  background-color: var(--pine); background-size: cover; background-position: center 30%;
+}
+.np-photo::before { content: ""; position: absolute; inset: 0; background: var(--scrim-photo); z-index: -1; }
+
+/* ---------- Link tile (the Linktree row) ---------- */
+.np-tile {
+  display: flex; align-items: center; gap: var(--space-3);
+  min-height: 56px; padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md); border: 1px solid var(--on-pine);
+  background: var(--glass); color: var(--on-pine);
+  -webkit-backdrop-filter: blur(var(--blur-fog)); backdrop-filter: blur(var(--blur-fog));
+  font-family: var(--font-sans); font-size: 15px; line-height: 20px; font-weight: 600;
+  text-decoration: none; transition: background-color 160ms ease-out;
+}
+.np-tile:hover { background: var(--pine); }
+.np-tile__icon { flex: none; width: 36px; height: 36px; border-radius: var(--radius-sm); display: grid; place-items: center; background: var(--pine); }
+.np-tile__label { flex: 1; text-align: center; }
+.np-tile__arrow { flex: none; width: 36px; text-align: right; opacity: 0.8; }
+
+/* ---------- Project card ---------- */
+.np-card {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface-200); color: var(--ink);
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  text-decoration: none;
+}
+.np-card__media { aspect-ratio: 4 / 3; background: var(--pine) center / cover no-repeat; position: relative; }
+.np-card__media .np-badge { position: absolute; top: var(--space-3); left: var(--space-3); background: var(--pine); color: var(--on-pine); border-color: transparent; }
+.np-card__body { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4) var(--space-6) var(--space-6); }
+.np-card__title { font-family: var(--font-sans); font-size: 20px; line-height: 28px; font-weight: 600; margin: 0; }
+.np-card__meta { font-size: 14px; line-height: 20px; color: var(--ink-muted); margin: 0; }
+.np-card__link { margin-top: var(--space-2); color: var(--lichen-text); font-weight: 600; font-size: 15px; }
+
+/* ---------- Text field ---------- */
+.np-field { display: flex; flex-direction: column; gap: var(--space-2); font-family: var(--font-sans); }
+.np-label { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--ink); }
+.np-label__opt { font-weight: 400; color: var(--ink-muted); }
+.np-input {
+  min-height: 44px; padding: 0 var(--space-3);
+  background: var(--surface-300); color: var(--ink);
+  border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  font: inherit; font-size: 16px;
+}
+textarea.np-input { min-height: 96px; padding: var(--space-3); resize: vertical; }
+.np-input::placeholder { color: var(--ink-muted); }
+.np-help { font-size: 14px; line-height: 20px; color: var(--ink-muted); margin: 0; }
+.np-field--error .np-input { border-color: var(--status-danger); }
+.np-field--error .np-help { color: var(--status-danger); }
+
+/* ---------- Hero ---------- */
+.np-hero { padding: var(--space-24) var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); align-items: flex-start; }
+.np-hero .np-display { font-size: 56px; line-height: 60px; color: var(--on-pine); max-width: 14ch; }
+.np-hero__lede { font-size: 18px; line-height: 28px; color: var(--on-pine); max-width: 46ch; margin: 0; }
+.np-hero__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+.np-hero .np-btn--outline { color: var(--on-pine); border-color: var(--on-pine); }
+.np-hero .np-btn--outline:hover { background: var(--glass); }
+@media (max-width: 640px) {
+  .np-hero { padding: var(--space-12) var(--space-4); }
+  .np-hero .np-display { font-size: 40px; line-height: 46px; }
+}
+
+/* ---------- Site header ---------- */
+.np-header {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--space-6); background: var(--pine); color: var(--on-pine);
+  font-family: var(--font-sans);
+}
+.np-header__logo { width: 44px; height: 44px; border-radius: var(--radius-full); display: block; }
+.np-header__name { font-family: var(--font-display); font-weight: 600; font-size: 18px; letter-spacing: 0.04em; margin-right: auto; }
+.np-header__nav { display: flex; gap: var(--space-6); font-size: 15px; font-weight: 500; }
+.np-header__nav a { color: var(--on-pine); text-decoration: none; opacity: 0.85; }
+.np-header__nav a[aria-current="page"], .np-header__nav a:hover { opacity: 1; text-decoration: underline; text-underline-offset: 6px; }
+@media (max-width: 720px) { .np-header__nav { display: none; } }
