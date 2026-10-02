@@ -2,29 +2,10 @@
    markup and does nothing when the page doesn't carry it, so one file
    serves every page.
 
-   Two headers live side by side while the site moves to the design system:
-   .site-header on pages still on css/base.css, and .site-head on pages
-   built from /design-system/. */
+   Every page is built from /design-system/ and carries the same .site-head
+   header. */
 (function () {
   var desktop = window.matchMedia('(min-width: 941px)');
-
-  /* ---------- Legacy header drawer (pages not yet redesigned) ---------- */
-  (function () {
-    var header = document.querySelector('.site-header');
-    if (!header) return;
-    var burger = header.querySelector('.site-header__burger');
-    var drawer = header.querySelector('.site-header__drawer');
-    var mq = window.matchMedia('(max-width: 1080px)');
-    var closeDrawer = function () {
-      drawer.classList.remove('is-open');
-      burger.setAttribute('aria-expanded', 'false');
-    };
-    burger.addEventListener('click', function () {
-      var open = drawer.classList.toggle('is-open');
-      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
-    });
-    mq.addEventListener('change', function (e) { if (!e.matches) closeDrawer(); });
-  })();
 
   /* ---------- Design-system header: Services menu ---------- */
   (function () {
@@ -38,7 +19,13 @@
       menu.hidden = !open;
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     }
-    toggle.addEventListener('click', function () { setOpen(menu.hidden); });
+    var hoverOpenedAt = 0;
+    toggle.addEventListener('click', function () {
+      // A mouse reaches the button by hovering, which has already opened the
+      // menu; that click should leave it open, not shut it again.
+      if (!menu.hidden && Date.now() - hoverOpenedAt < 600) return;
+      setOpen(menu.hidden);
+    });
     group.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && !menu.hidden) { setOpen(false); toggle.focus(); }
     });
@@ -55,7 +42,11 @@
     // With a mouse, open on hover as people expect; a short grace period
     // stops it snapping shut on the way from the button to the panel.
     if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-      group.addEventListener('mouseenter', function () { clearTimeout(hoverTimer); setOpen(true); });
+      group.addEventListener('mouseenter', function () {
+        clearTimeout(hoverTimer);
+        if (menu.hidden) hoverOpenedAt = Date.now();
+        setOpen(true);
+      });
       group.addEventListener('mouseleave', function () {
         hoverTimer = setTimeout(function () { setOpen(false); }, 160);
       });
@@ -136,7 +127,9 @@
     if (!form) return;
     var desc = form.querySelector('[name="description"]');
     var boxes = Array.prototype.slice.call(form.querySelectorAll('.svc-pick input[type="checkbox"]'));
-    var TAG = 'Home page estimate request';
+    // Which page sent the lead. Each page's form names itself in
+    // data-source; the home page's form has none.
+    var TAG = form.getAttribute('data-source') || 'Home page estimate request';
 
     function tick(name) {
       boxes.forEach(function (b) {

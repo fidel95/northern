@@ -1,17 +1,18 @@
-/* Windows page reuses doors.css's .product-section / .door-card / .finishes / .faq
-   patterns (structurally identical), plus this small addition for the sticky
-   sub-nav unique to this page. */
+/* Windows page: everything in css/doors.css, plus the sticky row of links
+   to each window style. */
 .quicknav {
-  border-bottom: 1px solid var(--line-hairline);
-  background: var(--surface-card);
-  position: sticky;
-  top: calc(min(30px, 3vw) + 64px);
-  z-index: 50;
+  position: sticky; top: 68px; z-index: 50;
+  background: var(--surface-000); border-bottom: 1px solid var(--line);
 }
 .quicknav__inner {
-  max-width: 1240px; margin: 0 auto; padding: 14px clamp(20px, 4vw, 32px);
-  display: flex; gap: 22px; flex-wrap: wrap;
-  font-family: var(--font-label); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+  width: 100%; max-width: 1248px; margin-inline: auto; padding: 0 var(--space-6);
+  display: flex; gap: var(--space-1) var(--space-6); overflow-x: auto; scrollbar-width: none;
 }
-.quicknav a { color: var(--text-muted); text-decoration: none; }
-.quicknav a:hover { color: var(--text-accent); }
+.quicknav a {
+  display: inline-flex; align-items: center; min-height: 48px; white-space: nowrap;
+  font-size: 15px; font-weight: 500; color: var(--ink-muted); text-decoration: none;
+}
+.quicknav a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 6px; }
+@media (max-width: 640px) { .quicknav__inner { padding-inline: var(--space-4); } }
+/* Land style links below the sticky header and this row, not under them. */
+main:has(.quicknav) :is(.door-card, .product-section, .faq) { scroll-margin-top: 128px; }

@@ -1,245 +1,107 @@
-/* ---------- Hero ---------- */
-.doors-hero {
-  position: relative;
-  overflow: hidden;
-  background: var(--surface-inset);
-  padding: clamp(56px, 7vw, 86px) 0;
-}
-.doors-hero__rules {
-  position: absolute;
-  inset: -14% 0;
-  background: repeating-linear-gradient(90deg, transparent 0 119px, var(--line-guide) 119px 120px);
-  pointer-events: none;
-}
-.doors-hero__watermark {
-  position: absolute;
-  right: -2vw;
-  top: -10%;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-stretch: 118%;
-  text-transform: uppercase;
-  font-size: min(22vw, 240px);
-  line-height: .8;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(234, 234, 232, .055);
-  pointer-events: none;
-  white-space: nowrap;
-  z-index: 0;
-}
-.doors-hero__inner {
-  position: relative;
-  z-index: 1;
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 0 clamp(20px, 4vw, 32px);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
-  gap: clamp(32px, 4vw, 64px);
-  align-items: end;
-}
-.doors-hero h1 {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-stretch: 118%;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  color: var(--text-strong);
-  font-size: clamp(36px, 4.6vw, 58px);
-  margin: 20px 0 20px;
-  line-height: .94;
-}
-.doors-hero h1 em { font-style: normal; color: var(--text-accent); font-weight: 400; }
-.doors-hero p { color: var(--text-body); font-size: 17px; max-width: 520px; text-wrap: pretty; }
-.doors-hero__ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+/* Doors and Windows product pages: the product sections, the style cards
+   with their diagrams, finishes, and the FAQ. The hero and the estimate
+   band come from css/pages.css. Design-system variables only. */
 
-/* ---------- Product sections (patio / entry) ---------- */
-.product-section { padding: clamp(56px, 7vw, 96px) 0 0; scroll-margin-top: 100px; }
-.product-section--entry { padding-top: clamp(64px, 8vw, 110px); }
-.product-section__inner { max-width: 1240px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 32px); }
+/* ---------- Product sections (patio / entry, window styles) ---------- */
+.product-section { padding-top: var(--space-16); scroll-margin-top: 84px; }
+.product-section--entry { padding-top: var(--space-24); }
+.product-section__inner { width: 100%; max-width: 1248px; margin-inline: auto; padding-inline: var(--space-6); }
 .product-section__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 40px;
-  margin-bottom: clamp(40px, 5vw, 64px);
-  flex-wrap: wrap;
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--space-3) var(--space-12); align-items: end; margin-bottom: var(--space-12);
 }
-.product-section--entry .product-section__head {
-  padding-top: clamp(40px, 5vw, 64px);
-  border-top: 1px solid var(--line-hairline);
-}
+.product-section--entry .product-section__head { padding-top: var(--space-12); border-top: 1px solid var(--line); }
 .product-section__head h2 {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-stretch: 118%;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  color: var(--text-strong);
-  font-size: clamp(30px, 3.4vw, 44px);
-  line-height: .94;
-  max-width: 560px;
+  font-family: var(--font-display); font-weight: 600; letter-spacing: 0.02em;
+  font-size: 40px; line-height: 46px; color: var(--ink); text-wrap: balance;
 }
-.product-section__head p { max-width: 400px; color: var(--text-muted); font-size: 15.5px; text-wrap: pretty; }
-.product-list { display: flex; flex-direction: column; gap: clamp(48px, 6vw, 88px); }
+.product-section__head p { color: var(--ink-muted); font-size: 16px; line-height: 24px; max-width: 60ch; text-wrap: pretty; }
+.product-list { display: flex; flex-direction: column; gap: var(--space-16); }
 
+/* ---------- Style card: diagram beside the copy ---------- */
 .door-card {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
-  gap: clamp(28px, 4vw, 56px);
-  align-items: center;
-  scroll-margin-top: 110px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: var(--space-8) var(--space-12); align-items: center; scroll-margin-top: 96px;
 }
 .door-card__art {
-  border: 1px solid var(--line-hairline);
-  aspect-ratio: 4 / 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  background: var(--surface-200); border: 1px solid var(--line); border-radius: var(--radius-lg);
 }
-/* The diagonal hatch is the empty state. A card that has a photo shows the
-   photo, the same way .project-card__photo works in the gallery. */
-.door-card__art:not(:has(img)) {
-  background: repeating-linear-gradient(135deg, var(--ink-300) 0 10px, var(--ink-200) 10px 20px);
-}
+/* Mist is the empty state. A card with a photo shows the photo, the same
+   way .project-card__photo works in the gallery. */
+.door-card__art:not(:has(img)) { background: var(--mist); }
 .door-card__art img { width: 100%; height: 100%; object-fit: cover; }
-.door-card__art span {
-  font-family: var(--font-label);
-  font-size: 12px;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  text-align: center;
-  padding: 0 24px;
-  line-height: 1.7;
-  white-space: pre-line;
-}
+.door-card__art span { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--surface-000); text-align: center; padding: 0 var(--space-6); white-space: pre-line; }
 .door-card--reverse .door-card__copy { order: -1; }
-.door-card__meta { font-family: var(--font-label); font-size: 12px; letter-spacing: 0.12em; color: var(--text-muted); }
-.door-card h3 {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-stretch: 118%;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  color: var(--text-strong);
-  font-size: clamp(24px, 2.8vw, 34px);
-  margin: 10px 0 16px;
-  line-height: .94;
+.door-card__copy { display: flex; flex-direction: column; align-items: flex-start; }
+.door-card__meta {
+  font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--lichen-text);
 }
-.door-card p { color: var(--text-muted); font-size: 15.5px; margin: 0 0 14px; max-width: 500px; text-wrap: pretty; }
-.door-card p:last-of-type { margin-bottom: 22px; }
+.door-card :is(h2, h3) {
+  font-family: var(--font-display); font-weight: 600; letter-spacing: 0.02em;
+  font-size: 32px; line-height: 38px; color: var(--ink); margin: var(--space-2) 0 var(--space-4);
+}
+.door-card p { color: var(--ink-muted); font-size: 16px; line-height: 26px; max-width: 60ch; margin-bottom: var(--space-3); text-wrap: pretty; }
+.door-card p:last-of-type { margin-bottom: var(--space-6); }
 .door-card dl {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
-  gap: 14px 20px;
-  margin: 0 0 26px;
-  padding: 20px 0;
-  border-top: 1px solid var(--line-hairline);
-  border-bottom: 1px solid var(--line-hairline);
+  align-self: stretch;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: var(--space-3) var(--space-6); margin-bottom: var(--space-6); padding-block: var(--space-4);
+  border-block: 1px solid var(--line);
 }
-.door-card dt { font-family: var(--font-label); font-size: 11px; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 4px; }
-.door-card dd { margin: 0; font-size: 14.5px; color: var(--text-strong); }
-.door-card__ctas { display: flex; gap: 14px; flex-wrap: wrap; }
+.door-card dt { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-muted); margin-bottom: var(--space-1); }
+.door-card dd { margin: 0; font-size: 15px; line-height: 22px; color: var(--ink); }
+.door-card__ctas { display: flex; gap: var(--space-3); flex-wrap: wrap; }
 
 /* ---------- Finishes ---------- */
-.finishes { padding: clamp(64px, 8vw, 110px) 0; }
-.finishes__inner { max-width: 1240px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 32px); }
+.finishes { padding-block: var(--space-24); }
+.finishes__inner { width: 100%; max-width: 1248px; margin-inline: auto; padding-inline: var(--space-6); }
 .finishes h2 {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-stretch: 118%;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  color: var(--text-strong);
-  font-size: clamp(28px, 3.2vw, 40px);
-  margin: 0 0 12px;
-  max-width: 620px;
-  line-height: .94;
+  font-family: var(--font-display); font-weight: 600; letter-spacing: 0.02em;
+  font-size: 40px; line-height: 46px; color: var(--ink); margin-bottom: var(--space-3);
 }
-.finishes > .finishes__inner > p { color: var(--text-muted); font-size: 15.5px; max-width: 520px; margin: 0 0 44px; text-wrap: pretty; }
-.finishes > .finishes__inner > p a { color: var(--text-strong); }
-.finishes__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
-  gap: 1px;
-  background: var(--line-hairline);
-  border: 1px solid var(--line-hairline);
-}
-.finishes__col { background: var(--surface-card); padding: 34px 30px; }
-.finishes__col h3 {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-stretch: 118%;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  font-size: 20px;
-  margin: 0 0 14px;
-  color: var(--text-strong);
-  line-height: .94;
-}
-.finishes__col-body { display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: var(--text-muted); }
-.finishes__col-body strong { color: var(--text-strong); font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); }
-.finishes__swatches { display: flex; flex-direction: column; gap: 10px; }
-.finishes__swatch { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-.finishes__swatch-chip { width: 18px; height: 18px; border: 1px solid var(--line-strong); flex: none; }
+.finishes > .finishes__inner > p { color: var(--ink-muted); font-size: 16px; line-height: 24px; max-width: 60ch; margin-bottom: var(--space-8); text-wrap: pretty; }
+.finishes > .finishes__inner > p a { color: var(--lichen-text); }
+.finishes__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: var(--space-6); }
+.finishes__col { padding: var(--space-6); background: var(--surface-200); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.finishes__col h3 { font-family: var(--font-sans); font-size: 20px; line-height: 28px; font-weight: 600; color: var(--ink); margin-bottom: var(--space-4); }
+.finishes__col-body { display: flex; flex-direction: column; gap: var(--space-3); font-size: 15px; line-height: 22px; color: var(--ink-muted); }
+.finishes__col-body strong { color: var(--ink); font-weight: 600; }
+.finishes__swatches { display: flex; flex-direction: column; gap: var(--space-3); }
+.finishes__swatch { display: flex; align-items: center; gap: var(--space-3); font-size: 15px; color: var(--ink); }
+/* The chips are product colours, set inline: they show the frame, not the brand. */
+.finishes__swatch-chip { width: 20px; height: 20px; border-radius: var(--radius-sm); border: 1px solid var(--line-strong); flex: none; }
 
 /* ---------- FAQ ---------- */
-.faq {
-  background: var(--surface-inset);
-  border-top: 1px solid var(--line-hairline);
-  border-bottom: 1px solid var(--line-hairline);
-  padding: clamp(64px, 8vw, 100px) 0;
-}
+.faq { background: var(--surface-000); padding-block: var(--space-24); }
 .faq__inner {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 0 clamp(20px, 4vw, 32px);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
-  gap: clamp(32px, 4vw, 64px);
+  width: 100%; max-width: 1248px; margin-inline: auto; padding-inline: var(--space-6);
+  display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: var(--space-12);
 }
+.faq__intro { display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-start; }
 .faq h2 {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-stretch: 118%;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  color: var(--text-strong);
-  font-size: clamp(28px, 3.2vw, 40px);
-  margin: 0 0 16px;
-  line-height: .94;
+  font-family: var(--font-display); font-weight: 600; letter-spacing: 0.02em;
+  font-size: 40px; line-height: 46px; color: var(--ink);
 }
-.faq__intro p { color: var(--text-muted); font-size: 15.5px; max-width: 380px; text-wrap: pretty; }
-.faq__intro p a { color: var(--text-strong); }
-.faq__item { border-top: 1px solid rgba(20, 20, 20, 0.16); padding: 22px 0; }
-.faq__item h3 { font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: var(--track-label); font-size: 16px; color: var(--text-strong); margin: 0 0 8px; }
-.faq__item p { color: var(--text-muted); font-size: 15px; text-wrap: pretty; }
+.faq__intro p { color: var(--ink-muted); font-size: 16px; line-height: 24px; max-width: 44ch; text-wrap: pretty; }
+.faq__intro p a { color: var(--lichen-text); }
+.faq__item { border-top: 1px solid var(--line); padding-block: var(--space-6); }
+.faq__item:last-child { border-bottom: 1px solid var(--line); }
+.faq__item h3 { font-family: var(--font-sans); font-size: 18px; line-height: 26px; font-weight: 600; color: var(--ink); margin-bottom: var(--space-2); }
+.faq__item p { color: var(--ink-muted); font-size: 16px; line-height: 26px; text-wrap: pretty; }
 
-/* ---------- Bottom CTA ---------- */
-.doors-cta { background: var(--surface-inset); }
-.doors-cta__inner {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: clamp(64px, 8vw, 100px) clamp(20px, 4vw, 32px);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
-  gap: clamp(32px, 4vw, 64px);
-  align-items: center;
+@media (max-width: 860px) {
+  .product-section__head, .faq__inner { grid-template-columns: 1fr; }
+  /* One column: the diagram always leads, rather than alternating. */
+  .door-card--reverse .door-card__copy { order: 0; }
 }
-.doors-cta h2 {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-stretch: 118%;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
-  color: var(--text-strong);
-  font-size: clamp(28px, 3.2vw, 40px);
-  margin: 0 0 18px;
-  line-height: .94;
+@media (max-width: 640px) {
+  .product-section { padding-top: var(--space-12); }
+  .product-section--entry { padding-top: var(--space-16); }
+  .product-section__inner, .finishes__inner, .faq__inner { padding-inline: var(--space-4); }
+  .product-section__head h2, .finishes h2, .faq h2 { font-size: 28px; line-height: 34px; }
+  .door-card :is(h2, h3) { font-size: 26px; line-height: 32px; }
+  .finishes, .faq { padding-block: var(--space-16); }
+  .finishes__col { padding: var(--space-4); }
 }
-.doors-cta p { color: var(--text-body); font-size: 15.5px; max-width: 440px; margin: 0 0 26px; text-wrap: pretty; }
-.doors-cta__ctas { display: flex; gap: 14px; flex-wrap: wrap; }
-
-/* ---------- Reveal-on-scroll (paired with js/motion.js) ---------- */
-[data-reveal] { will-change: opacity, transform; }

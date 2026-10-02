@@ -9,10 +9,15 @@ export function captureSnapshot(sourceCanvas, { brand = 'NORTHERN PINES', tag = 
   const ctx = out.getContext('2d');
   ctx.drawImage(sourceCanvas, 0, 0);
 
+  // Caption colours and faces come from the design system's tokens, read
+  // off the page so a palette change carries into saved images too.
+  const css = getComputedStyle(document.documentElement);
+  const token = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+
   const gh = Math.round(out.height * 0.14);
   const grad = ctx.createLinearGradient(0, out.height - gh, 0, out.height);
-  grad.addColorStop(0, 'rgba(9,9,9,0)');
-  grad.addColorStop(1, 'rgba(9,9,9,0.6)');
+  grad.addColorStop(0, 'rgba(16,21,18,0)');
+  grad.addColorStop(1, 'rgba(16,21,18,0.64)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, out.height - gh, out.width, gh);
 
@@ -20,12 +25,12 @@ export function captureSnapshot(sourceCanvas, { brand = 'NORTHERN PINES', tag = 
   const baseY = out.height - out.height * 0.035;
 
   ctx.textBaseline = 'bottom';
-  ctx.fillStyle = '#e9ee1b';
-  ctx.font = `600 ${Math.round(fontSize * 0.5)}px 'Space Mono', monospace`;
+  ctx.fillStyle = token('--lichen-text', '#d4d77e');
+  ctx.font = `600 ${Math.round(fontSize * 0.55)}px Inter, system-ui, sans-serif`;
   ctx.fillText(tag, out.width * 0.028, baseY - fontSize - 4);
 
-  ctx.fillStyle = '#f4f4f2';
-  ctx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+  ctx.fillStyle = token('--on-pine', '#fcf9ef');
+  ctx.font = `600 ${fontSize}px Cinzel, Georgia, serif`;
   ctx.fillText(brand, out.width * 0.028, baseY);
 
   return out;

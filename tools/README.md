@@ -44,8 +44,8 @@ maintained. First run downloads ~11 MB of Census boundaries and shells out to
 `npx mapshaper`; `--keep` caches that in `./build` instead of a temp dir.
 
 Only the geometry is generated. Every fill and stroke comes from
-`.service-map` in `css/content.css`, so the map follows the palette in
-`css/base.css` instead of freezing a copy of it — which is also why it is
+`.service-map` in `css/pages.css`, so the map follows the palette in
+`design-system/tokens.css` instead of freezing a copy of it — which is also why it is
 inlined rather than loaded with `<img>`, since an `<img>`-loaded SVG is a
 closed document that inherits nothing from the page.
 
@@ -92,22 +92,9 @@ a placeholder, not a stand-in for our work.
 
 ## Fonts
 
-The three families are self-hosted under `assets/fonts/`, with the `@font-face`
-rules at the top of `css/base.css`. To regenerate them, fetch the Google Fonts
-stylesheet with a modern browser user-agent so it serves woff2:
-
-```sh
-curl -A "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 \
-(KHTML, like Gecko) Chrome/120.0 Safari/537.36" \
-  "https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100..125,100..900&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap"
-```
-
-Download the `latin` and `latin-ext` woff2 files it lists and copy the
-`unicode-range` values across unchanged — they are what keeps a browser from
-downloading a subset the page never uses. Space Grotesk serves one variable
-file for 400/500/700, so it gets a single face with `font-weight: 400 700`;
-Archivo is variable on both weight and width, which the display type relies on
-(`font-stretch: 118%`). All three families are OFL.
+The site's two families, Cinzel and Inter, ship with the design system in
+`design-system/fonts/`, with the `@font-face` rules at the top of
+`design-system/tokens.css`. Both are OFL. Nothing here regenerates them.
 
 ## Adding a service-area page
 

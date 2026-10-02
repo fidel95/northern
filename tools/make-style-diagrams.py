@@ -14,14 +14,17 @@ Drawn to the 4/3 box .door-card__art reserves. Palette is the site's own.
 import pathlib
 
 W, H = 800, 600
-INK, FRAME, ACID, MUTED = '#161618', '#d9d9d6', '#e9ee1b', '#8a8a91'
-SLAB = '#b8b6b0'
+# Design-system colours (design-system/tokens.css, Forest theme). These
+# files load through <img>, which can't see the page's CSS variables, so the
+# values are copied here: surface-200, ink, lichen, ink-muted, mist.
+INK, FRAME, ACID, MUTED = '#232c26', '#fcf9ef', '#c9cc6b', '#b3b6af'
+SLAB = '#a8aba3'
 
 DEFS = f'''<defs>
 <marker id="a" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto">
 <path d="M0 0 L10 5 L0 10 z" fill="{ACID}"/></marker>
 <linearGradient id="g" x1="0" y1="0" x2="0.4" y2="1">
-<stop offset="0" stop-color="#3a464a"/><stop offset="1" stop-color="#232b2e"/></linearGradient>
+<stop offset="0" stop-color="#3f483e"/><stop offset="1" stop-color="#1b231e"/></linearGradient>
 </defs>'''
 
 
@@ -78,8 +81,8 @@ def swing(x, w, hinge_left=True, inset=30):
 
 def cap(text):
     return (f'<text x="{W/2}" y="{H-30}" fill="{MUTED}" text-anchor="middle" '
-            f'font-family="ui-monospace,SFMono-Regular,monospace" font-size="23" '
-            f'letter-spacing="4">{text}</text>')
+            f'font-family="Inter,system-ui,sans-serif" font-size="22" font-weight="600" '
+            f'letter-spacing="3.5">{text}</text>')
 
 
 END = '</svg>'

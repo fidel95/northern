@@ -367,6 +367,10 @@ a { color: var(--lichen-text); text-underline-offset: 3px; }
   .estimate-form { padding: var(--space-6) var(--space-4); }
   .form-row { grid-template-columns: 1fr; }
 }
+/* Three across leaves "Concrete" clipped on a phone; two across fits. */
+@media (max-width: 440px) {
+  .svc-pick__list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 /* ---------- Footer ---------- */
 .site-foot { position: relative; background: var(--surface-000); color: var(--ink); padding-top: var(--space-16); }
