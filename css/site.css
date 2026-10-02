@@ -413,3 +413,87 @@ a { color: var(--lichen-text); text-underline-offset: 3px; }
   .site-head:has(.site-drawer:not([hidden])) ~ .mobile-bar { display: none; }
   body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
 }
+
+/* ---------- Atmosphere: drifting fog and swaying pines ----------
+   Decorative motion on the photo heroes, added by js/site.js only when the
+   visitor hasn't asked for reduced motion (html.motion-ok). Nothing here
+   loads an image or a library: the fog is radial gradients, the trees are
+   the existing treeline masks. Only transform and opacity animate, so the
+   browser composites it without repainting the page.
+
+   The fog sits between the photo and the dark scrim (z-index -2, the scrim
+   is -1), so text contrast over the hero is exactly what it was. A Pause
+   button in each hero stops all of it (WCAG 2.2.2), and it pauses itself
+   while the hero is off screen. */
+.fog { position: absolute; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+.fog__layer {
+  position: absolute; top: 0; bottom: 0; left: 0; width: 200%;
+  background-repeat: repeat-x; background-size: 50% 100%;
+  will-change: transform;
+}
+/* Three banks of fog: low and thick, mid and broken, high and thin. Each
+   tile is exactly half the layer, so sliding the layer by half loops. */
+.fog__layer--low {
+  opacity: 0.55;
+  background-image:
+    radial-gradient(42% 26% at 18% 82%, color-mix(in srgb, var(--mist) 90%, transparent), transparent 70%),
+    radial-gradient(36% 22% at 62% 90%, color-mix(in srgb, var(--mist) 80%, transparent), transparent 70%),
+    radial-gradient(30% 20% at 92% 78%, color-mix(in srgb, var(--mist) 70%, transparent), transparent 70%);
+}
+.fog__layer--mid {
+  opacity: 0.4;
+  background-image:
+    radial-gradient(34% 18% at 30% 60%, color-mix(in srgb, var(--on-pine) 60%, transparent), transparent 70%),
+    radial-gradient(28% 16% at 78% 52%, color-mix(in srgb, var(--on-pine) 50%, transparent), transparent 70%);
+}
+.fog__layer--high {
+  opacity: 0.28;
+  background-image:
+    radial-gradient(48% 14% at 40% 30%, color-mix(in srgb, var(--on-pine) 55%, transparent), transparent 70%),
+    radial-gradient(30% 12% at 88% 22%, color-mix(in srgb, var(--mist) 60%, transparent), transparent 70%);
+}
+/* On arrival the fog is thick, then lifts off the photo. */
+.fog__veil {
+  position: absolute; inset: 0; opacity: 0;
+  background: linear-gradient(to top, color-mix(in srgb, var(--mist) 70%, transparent), color-mix(in srgb, var(--mist) 25%, transparent));
+}
+
+.motion-ok .fog__layer--low  { animation: fog-drift 90s linear infinite; }
+.motion-ok .fog__layer--mid  { animation: fog-drift 140s linear infinite; animation-delay: -40s; }
+.motion-ok .fog__layer--high { animation: fog-drift 200s linear infinite; animation-delay: -90s; }
+.motion-ok .fog__veil { animation: fog-lift 3200ms ease-out 200ms both; }
+@keyframes fog-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+@keyframes fog-lift { from { opacity: 1; } to { opacity: 0; } }
+
+/* Pines in the wind: the near row leans a little more than the far one,
+   pivoting at the ground line, so the edge where they meet the section
+   below never moves. */
+.motion-ok .page-hero::after,
+.motion-ok .treeline--sway::after { transform-origin: 50% 100%; animation: pine-sway 7s ease-in-out infinite alternate; }
+.motion-ok .treeline--sway::before { transform-origin: 50% 100%; animation: pine-sway-far 9s ease-in-out infinite alternate; }
+@keyframes pine-sway { from { transform: skewX(-1.1deg); } to { transform: skewX(1.1deg); } }
+@keyframes pine-sway-far { from { transform: skewX(-0.6deg); } to { transform: skewX(0.6deg); } }
+
+/* Paused by the visitor, or the hero is off screen. */
+.motion-paused .fog__layer, .motion-paused .fog__veil,
+.motion-paused .page-hero::after,
+.motion-paused .treeline--sway::before, .motion-paused .treeline--sway::after,
+.is-idle .fog__layer, .is-idle .fog__veil, .page-hero.is-idle::after,
+.treeline--sway.is-idle::before, .treeline--sway.is-idle::after { animation-play-state: paused; }
+
+.motion-toggle {
+  position: absolute; right: var(--space-4); bottom: var(--space-4); z-index: 2;
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: 36px; padding: 0 var(--space-3);
+  color: var(--on-pine); background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--blur-fog)); backdrop-filter: blur(var(--blur-fog));
+  border: 1px solid color-mix(in srgb, var(--on-pine) 45%, transparent); border-radius: var(--radius-full);
+  font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer;
+  opacity: 0.8; transition: opacity 160ms ease-out, background-color 160ms ease-out;
+}
+.motion-toggle:hover, .motion-toggle:focus-visible { opacity: 1; background: var(--pine); }
+.motion-toggle .icon { width: 16px; height: 16px; }
+.motion-toggle .icon-play { display: none; }
+.motion-toggle[aria-pressed="true"] .icon-pause { display: none; }
+.motion-toggle[aria-pressed="true"] .icon-play { display: block; }
+@media (max-width: 640px) { .motion-toggle { right: var(--space-3); } }
