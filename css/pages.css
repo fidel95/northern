@@ -73,7 +73,7 @@
   font-family: var(--font-display); font-weight: 600; letter-spacing: 0.02em;
   font-size: 40px; line-height: 46px; color: var(--ink); max-width: 24ch; text-wrap: balance;
 }
-.section-head p { color: var(--ink-muted); font-size: 16px; line-height: 24px; max-width: 60ch; }
+.section-head p:not(.np-eyebrow) { color: var(--ink-muted); font-size: 16px; line-height: 24px; max-width: 60ch; }
 h2.section-title { margin-bottom: var(--space-3); }
 p.section-sub { color: var(--ink-muted); font-size: 16px; line-height: 24px; max-width: 60ch; margin-bottom: var(--space-8); text-wrap: pretty; }
 p.section-sub a { color: var(--lichen-text); }

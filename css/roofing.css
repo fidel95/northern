@@ -1,0 +1,83 @@
+/* Roofing page: the six animated roof-shape cards. Drawings are generated
+   by tools/make-roof-shapes.py; everything they show is coloured here from
+   design-system tokens.
+
+   Motion: each drawing builds once when it scrolls into view (walls, then
+   the roof outline drawing itself, then the shingle courses), then rain-blue
+   flow lines keep running slowly down the slopes. With reduced motion, or
+   without JavaScript, the finished drawing shows and nothing moves. */
+
+.roof-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--space-6); }
+.roof-card {
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--surface-200); border: 1px solid var(--line); border-radius: var(--radius-lg);
+}
+.roof-card__body { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4) var(--space-6) var(--space-6); flex: 1; }
+.roof-card__name { font-family: var(--font-sans); font-size: 20px; line-height: 28px; font-weight: 600; color: var(--ink); }
+.roof-card__copy { font-size: 16px; line-height: 24px; color: var(--ink-muted); text-wrap: pretty; }
+.roof-card__water { display: flex; gap: var(--space-2); align-items: baseline; margin-top: auto; padding-top: var(--space-3); border-top: 1px solid var(--line); font-size: 15px; line-height: 22px; color: var(--ink); }
+.roof-card__drop { flex: none; width: 8px; height: 8px; border-radius: 50% 0 50% 50%; transform: rotate(-45deg) translateY(-1px); background: var(--status-success); }
+
+/* ---------- The drawing ---------- */
+.roof-art { position: relative; margin: 0; background: var(--surface-000); border-bottom: 1px solid var(--line); }
+.roof-art__svg { display: block; width: 100%; height: auto; }
+.roof-art .r-ground { stroke: var(--line-strong); stroke-width: 1.5; stroke-linecap: round; }
+.roof-art .r-wall { fill: var(--surface-300); stroke: var(--line-strong); stroke-width: 1.5; stroke-linejoin: round; }
+.roof-art .r-trim { fill: var(--surface-000); }
+.roof-art .r-roof { fill: color-mix(in srgb, var(--lichen) 22%, var(--surface-200)); stroke: var(--lichen); stroke-width: 2.5; stroke-linejoin: round; }
+.roof-art .r-course { fill: none; stroke: color-mix(in srgb, var(--lichen) 55%, var(--surface-200)); stroke-width: 1; stroke-linecap: round; }
+.roof-art .r-dormer { fill: var(--surface-300); stroke: var(--lichen); stroke-width: 1.5; stroke-linejoin: round; }
+.roof-art .r-flow {
+  fill: none; stroke: var(--status-success); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 0.07 0.09;
+}
+
+.roof-art__replay {
+  position: absolute; right: var(--space-3); bottom: var(--space-3);
+  min-height: 36px; padding: 0 var(--space-3); cursor: pointer;
+  background: var(--pine); color: var(--on-pine); border: 1px solid var(--line-strong); border-radius: var(--radius-md);
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  opacity: 0; transition: opacity 160ms ease-out, background-color 160ms ease-out;
+}
+.roof-art__replay:hover { background: var(--surface-300); }
+.roof-card:hover .roof-art__replay, .roof-art__replay:focus-visible { opacity: 1; }
+@media (hover: none) { .roof-art__replay { opacity: 1; } }
+
+/* ---------- Animation (only once js/roofing.js has said it can run) ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .roof-anim .roof-art .r-wall,
+  .roof-anim .roof-art .r-course,
+  .roof-anim .roof-art .r-flow { opacity: 0; }
+  .roof-anim .roof-art .r-roof { stroke-dasharray: 1; stroke-dashoffset: 1; fill-opacity: 0; }
+
+  .roof-anim .roof-art.is-playing .r-wall { animation: roof-fade 400ms ease-out forwards; }
+  .roof-anim .roof-art.is-playing .r-roof {
+    animation: roof-draw 1100ms ease-out 250ms forwards, roof-fill 500ms ease-out 1150ms forwards;
+  }
+  .roof-anim .roof-art.is-playing .r-course { animation: roof-fade 240ms ease-out calc(1300ms + var(--i) * 90ms) forwards; }
+  .roof-anim .roof-art.is-playing .r-flow {
+    animation:
+      roof-fade 400ms ease-out calc(2000ms + var(--i) * 150ms) forwards,
+      roof-run 2400ms linear calc(2000ms + var(--i) * 150ms) infinite;
+  }
+}
+@keyframes roof-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes roof-draw { to { stroke-dashoffset: 0; } }
+@keyframes roof-fill { to { fill-opacity: 1; } }
+/* Dashes move down the slope; 0.16 is one dash plus one gap. */
+@keyframes roof-run { from { stroke-dashoffset: 0.16; } to { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .roof-art__replay { display: none; }
+}
+@media (max-width: 640px) {
+  .roof-card__body { padding: var(--space-4); }
+}
+
+/* ---------- Photos placeholder row ---------- */
+.roof-photos {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--space-6);
+  padding: var(--space-8); background: var(--surface-200); border: 1px solid var(--line); border-radius: var(--radius-lg);
+}
+.roof-photos > div { display: flex; flex-direction: column; gap: var(--space-3); max-width: 64ch; }
+@media (max-width: 640px) { .roof-photos { padding: var(--space-6) var(--space-4); } }
