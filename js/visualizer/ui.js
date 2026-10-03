@@ -34,9 +34,15 @@ function isNarrow() {
   return window.matchMedia('(max-width: 900px)').matches || document.body.classList.contains('viz-present');
 }
 
+// Which services the customer has actually changed from the stock house,
+// in the panel's order — what the estimate request is really about.
+function changedCategories(selections) {
+  return CATEGORIES.filter((cat) => cat.groups.some((g) => selections[g] !== DEFAULT_SELECTIONS[g]));
+}
+
 export function createUI(root, {
   state, onSelect, onHouseChange, onMode, onSnapshot, onResetView, onResetConfig, onPickFile, onUndo,
-  onCompareToggle, onComparePos,
+  onCompareToggle, onComparePos, onPhotoZone,
 }) {
   const refs = {
     modeTabs: root.querySelectorAll('[data-viz3d-modetab]'),
@@ -64,7 +70,29 @@ export function createUI(root, {
     compareHandle: root.querySelector('[data-viz3d-comparehandle]'),
     presentToggle: root.querySelector('[data-viz3d-presenttoggle]'),
     presentExit: root.querySelector('[data-viz3d-presentexit]'),
+    photoZones: root.querySelectorAll('[data-photozone]'),
+    // The lead form's "What do you need?" checkboxes, ticked for every
+    // service the customer changes here.
+    serviceBoxes: document.querySelectorAll('.estimate-form .svc-pick input[type="checkbox"]'),
   };
+
+  // Photo mode: which part of the photo the next four taps trace.
+  function setPhotoZone(zone) {
+    refs.photoZones.forEach((b) => b.setAttribute('aria-pressed', b.getAttribute('data-photozone') === zone ? 'true' : 'false'));
+    if (onPhotoZone) onPhotoZone(zone);
+  }
+  refs.photoZones.forEach((b) => b.addEventListener('click', () => setPhotoZone(b.getAttribute('data-photozone'))));
+
+  // Tick a service once, the first time it changes. Never untick: the
+  // customer may have ticked or unticked it themselves since.
+  const autoTicked = new Set();
+  function tickChangedServices() {
+    changedCategories(state.selections).forEach((cat) => {
+      if (autoTicked.has(cat.service)) return;
+      autoTicked.add(cat.service);
+      refs.serviceBoxes.forEach((box) => { if (box.value === cat.service) box.checked = true; });
+    });
+  }
 
   let sheetOpen = false;
   let compareOn = false;
@@ -113,7 +141,7 @@ export function createUI(root, {
   function setPresentation(on) {
     document.body.classList.toggle('viz-present', on);
     if (refs.presentExit) refs.presentExit.hidden = !on;
-    if (refs.presentToggle) refs.presentToggle.textContent = on ? 'Exit Presentation Mode' : 'Presentation Mode';
+    if (refs.presentToggle) refs.presentToggle.textContent = on ? 'Exit presentation mode' : 'Presentation mode';
     // Keep the address bar in step, so a link copied while presenting opens
     // presenting, and one copied after leaving does not.
     syncUrl(state.snapshot());
@@ -173,6 +201,8 @@ export function createUI(root, {
       btn.textContent = cat.label;
       btn.addEventListener('click', () => {
         state.setPanelSection(cat.id);
+        // On a photo, picking Roofing or Siding & trim also picks what to trace.
+        if (state.mode === 'photo' && { roofing: 1, siding: 1, windows: 1 }[cat.id]) setPhotoZone(cat.id);
         if (isNarrow()) { sheetOpen = true; renderAll(); }
       });
       refs.categoryList.appendChild(btn);
@@ -211,7 +241,10 @@ export function createUI(root, {
   function estimateHref() {
     const s = state.snapshot();
     const note = `From the 3D visualizer — ${houseConfigurations[s.house]?.name || ''} home, ` +
-      `${optionById('siding', s.siding).name} siding, ${optionById('trim', s.trim).name} trim, ${optionById('roofing', s.roofing).name} roof.`;
+      `${optionById('siding', s.siding).name} siding, ${optionById('trim', s.trim).name} trim, ` +
+      `${optionById('roofing', s.roofing).name} ${optionById('roofType', s.roofType).name.toLowerCase()} roof, ` +
+      `${optionById('gutter', s.gutter).name} gutters, ${optionById('concreteColor', s.concreteColor).name} ` +
+      `${optionById('concrete', s.concrete).name.toLowerCase()} concrete.`;
 
     if (state.panelSection === 'doors') {
       const target = DOOR_STYLE_TO_ESTIMATE[s.doorStyle] || DOOR_STYLE_TO_ESTIMATE.single;
@@ -229,14 +262,27 @@ export function createUI(root, {
     return `/estimate/?${new URLSearchParams(params).toString()}`;
   }
 
+  // What the team reads in the lead. Windows and doors are priced by the
+  // instant estimate; everything else goes as a quote request, never as a
+  // number nobody has worked out.
   function prefillText() {
     const s = state.snapshot();
+    const name = (g) => optionById(g, s[g]).name;
+    const changed = changedCategories(s);
+    const services = changed.length
+      ? changed.map((c) => (c.priced ? c.service : `${c.service} (quote requested)`)).join(', ')
+      : 'None changed yet; standard look';
     return 'HOME VISUALIZER CONFIGURATION\n' +
       `Base home: ${houseConfigurations[s.house]?.name || ''}\n` +
-      `Windows: ${optionById('windowStyle', s.windowStyle).name} · ${optionById('windowFrame', s.windowFrame).name} frame · ` +
-      `${optionById('windowGrille', s.windowGrille).name} grille · ${optionById('windowGlass', s.windowGlass).name} glass\n` +
-      `Door: ${optionById('doorStyle', s.doorStyle).name} · ${optionById('doorColor', s.doorColor).name} · ${optionById('doorHardware', s.doorHardware).name} hardware\n` +
-      `Siding: ${optionById('siding', s.siding).name} · Trim: ${optionById('trim', s.trim).name} · Roof: ${optionById('roofing', s.roofing).name}\n` +
+      `Services they changed: ${services}\n\n` +
+      `Roofing: ${name('roofType')} · ${name('roofing')}\n` +
+      `Siding & trim: ${name('siding')} siding · ${name('trim')} trim\n` +
+      `Windows: ${name('windowStyle')} · ${name('windowFrame')} frame · ` +
+      `${s.windowGrille === 'none' ? 'No grilles' : `${name('windowGrille')} grilles`} · ${name('windowGlass')} glass\n` +
+      `Front door: ${name('doorStyle')} · ${name('doorColor')} · ${name('doorHardware')} hardware\n` +
+      `Garage door: ${name('garageDoor')}\n` +
+      `Gutters: ${name('gutter')}\n` +
+      `Concrete: ${name('concrete')} · ${name('concreteColor')}\n` +
       // The prose above is for reading; this line is for the rep. Opening it
       // rebuilds exactly what the customer configured, which beats
       // reconstructing it by hand from the list before an appointment.
@@ -278,6 +324,7 @@ export function createUI(root, {
     const href = estimateHref();
     refs.estimateLink.forEach((a) => a.setAttribute('href', href));
     if (refs.desc) refs.desc.value = prefillText();
+    tickChangedServices();
   }
 
   refs.modeTabs.forEach((tab) => tab.addEventListener('click', () => onMode(tab.getAttribute('data-viz3d-modetab'))));

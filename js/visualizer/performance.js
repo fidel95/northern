@@ -30,7 +30,11 @@ export function detectPerformanceTier() {
   if (mem != null) { if (mem >= 8) score += 2; else if (mem >= 4) score += 1; } else if (isIOS) { score += 2; } else { score += 1; }
   if (!isSmallScreen) score += 1;
 
-  const tier = score >= 6 ? 'high' : score >= 3 ? 'medium' : 'low';
+  let tier = score >= 6 ? 'high' : score >= 3 ? 'medium' : 'low';
+  // ?tier=low|medium|high forces a tier, for testing a phone's tier on a
+  // desktop and the reverse. Anything else is ignored.
+  const forced = new URLSearchParams(window.location.search).get('tier');
+  if (forced === 'low' || forced === 'medium' || forced === 'high') tier = forced;
 
   const TIERS = {
     high: {

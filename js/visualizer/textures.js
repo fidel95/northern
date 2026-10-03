@@ -13,6 +13,12 @@
 
 import * as THREE from 'three';
 
+// House surfaces carry UVs in real metres (generate-houses.py), so every
+// tiling texture says how many metres one tile covers and its repeat is the
+// inverse: lap courses come out the same height on a ranch wall and a
+// colonial gable, and shingle courses the same on every roof plane.
+const perMetre = (tileMetres) => ({ x: 1 / tileMetres, y: 1 / tileMetres });
+
 // Mutable (not const) so main.js can lower it once, before any texture gets
 // generated, on low-tier devices — every build* function below reads it at
 // call time via canvas()'s default, so nothing else here needs to change.
@@ -128,7 +134,8 @@ function lapSiding(colorHex) {
   }
   cctx.globalAlpha = 1;
 
-  const repeat = { x: 6, y: 8 };
+  // 8 courses at a 7-inch (178 mm) exposure.
+  const repeat = perMetre(8 * 0.178);
   return {
     map: toTexture(color, true, repeat),
     normalMap: toTexture(heightToNormalMap(heightC, 1.6), false, repeat),
@@ -169,7 +176,8 @@ function boardBatten(colorHex) {
     hctx.fillRect(x + boardW - battenW - 2, 0, 2, SIZE);
   }
 
-  const repeat = { x: 5, y: 3 };
+  // 6 boards at 12 inches (305 mm) on centre.
+  const repeat = perMetre(6 * 0.305);
   return {
     map: toTexture(color, true, repeat),
     normalMap: toTexture(heightToNormalMap(heightC, 2.4), false, repeat),
@@ -182,7 +190,8 @@ function shake(colorHex) {
   const rgb = hexToRgb(colorHex);
   const rows = 10;
   const rowH = SIZE / rows;
-  const pieceW = 46;
+  // A whole number of shakes per tile, or the tile seams show.
+  const pieceW = SIZE / 11;
 
   const color = canvas(); const cctx = color.getContext('2d');
   const heightC = canvas(); const hctx = heightC.getContext('2d');
@@ -211,7 +220,8 @@ function shake(colorHex) {
   }
   cctx.globalAlpha = 1;
 
-  const repeat = { x: 5, y: 6 };
+  // 10 courses at a 7-inch exposure.
+  const repeat = perMetre(10 * 0.178);
   return {
     map: toTexture(color, true, repeat),
     normalMap: toTexture(heightToNormalMap(heightC, 2.0), false, repeat),
@@ -230,62 +240,105 @@ export function getSidingTexture(optionId, colorHex, pattern) {
 
 // --- Roofing ------------------------------------------------------------
 
+// Architectural (laminated) shingles: courses of tabs in random widths,
+// each with its own granule shade and a dark shadow band along its lower
+// edge where the next course laps over — the look that reads as "roof"
+// rather than as a grid of identical rectangles. Tile: 10 courses at a
+// 5.6-inch (143 mm) exposure.
 function shingleRoof(colorHex) {
   const rgb = hexToRgb(colorHex);
   const courses = 10;
   const courseH = SIZE / courses;
-  const tabW = SIZE / 6;
 
   const color = canvas(); const cctx = color.getContext('2d');
   const heightC = canvas(); const hctx = heightC.getContext('2d');
   const rough = canvas(); const rctx = rough.getContext('2d');
   const rnd = seededRandom(707);
 
-  cctx.fillStyle = shade(rgb, 0); cctx.fillRect(0, 0, SIZE, SIZE);
-  hctx.fillStyle = 'rgb(140,140,140)'; hctx.fillRect(0, 0, SIZE, SIZE);
-  rctx.fillStyle = 'rgb(190,190,190)'; rctx.fillRect(0, 0, SIZE, SIZE);
+  cctx.fillStyle = shade(rgb, -22); cctx.fillRect(0, 0, SIZE, SIZE);
+  hctx.fillStyle = 'rgb(60,60,60)'; hctx.fillRect(0, 0, SIZE, SIZE);
+  rctx.fillStyle = 'rgb(200,200,200)'; rctx.fillRect(0, 0, SIZE, SIZE);
 
   for (let c = 0; c < courses; c++) {
     const y = c * courseH;
-    const offset = (c % 2) * tabW * 0.5;
-    cctx.fillStyle = shade(rgb, -14);
-    cctx.fillRect(0, y + courseH - 3, SIZE, 3);
-    hctx.fillStyle = 'rgb(30,30,30)';
-    hctx.fillRect(0, y + courseH - 3, SIZE, 3);
-    for (let x = -tabW; x < SIZE + tabW; x += tabW) {
-      const px = x + offset;
-      const jitter = (rnd() - 0.5) * 22;
-      cctx.fillStyle = shade(rgb, jitter);
-      cctx.fillRect(px + 1, y, tabW - 2, courseH - 3);
-      hctx.fillStyle = `rgb(${150 + jitter},${150 + jitter},${150 + jitter})`;
-      hctx.fillRect(px + 1, y, tabW - 2, courseH - 3);
-      rctx.fillStyle = `rgb(${190 + jitter},${190 + jitter},${190 + jitter})`;
-      rctx.fillRect(px + 1, y, tabW - 2, courseH - 3);
-      cctx.fillStyle = shade(rgb, jitter - 30);
-      cctx.fillRect(px + tabW - 3, y, 2, courseH - 3);
-    }
+    // Tabs of 0.6–1.5x a nominal width, filling the tile exactly so it wraps.
+    const widths = [];
+    let total = 0;
+    while (total < SIZE) { const w = SIZE / 7 * (0.6 + rnd() * 0.9); widths.push(w); total += w; }
+    const k = SIZE / total;
+    let x = rnd() * SIZE;
+    widths.forEach((w0) => {
+      const w = w0 * k;
+      const jitter = (rnd() - 0.5) * 30;
+      const draw = (ox) => {
+        cctx.fillStyle = shade(rgb, jitter); cctx.fillRect(x + ox + 1, y, w - 2, courseH);
+        // Shadow band: the laminated lower layer showing beneath the tab.
+        cctx.fillStyle = shade(rgb, jitter - 28); cctx.fillRect(x + ox + 1, y + courseH * 0.68, w - 2, courseH * 0.32);
+        hctx.fillStyle = `rgb(${150 + jitter},${150 + jitter},${150 + jitter})`; hctx.fillRect(x + ox + 1, y, w - 2, courseH * 0.7);
+        hctx.fillStyle = `rgb(${110 + jitter},${110 + jitter},${110 + jitter})`; hctx.fillRect(x + ox + 1, y + courseH * 0.7, w - 2, courseH * 0.3);
+        rctx.fillStyle = `rgb(${195 + jitter},${195 + jitter},${195 + jitter})`; rctx.fillRect(x + ox + 1, y, w - 2, courseH);
+      };
+      draw(0); if (x + w > SIZE) draw(-SIZE);
+      x = (x + w) % SIZE;
+    });
+    // The butt edge of the course above casts a hard line.
+    cctx.fillStyle = shade(rgb, -48); cctx.fillRect(0, y, SIZE, 2);
+    hctx.fillStyle = 'rgb(20,20,20)'; hctx.fillRect(0, y, SIZE, 2);
   }
-  // granule speckle — roofing shingles are never a flat color
-  for (let i = 0; i < 9000; i++) {
+  // Granules: shingles are never a flat colour.
+  for (let i = 0; i < SIZE * 24; i++) {
     const v = rnd();
-    cctx.fillStyle = v > 0.5 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+    cctx.fillStyle = v > 0.5 ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)';
     cctx.fillRect(rnd() * SIZE, rnd() * SIZE, 1, 1);
     rctx.fillStyle = v > 0.5 ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
     rctx.fillRect(rnd() * SIZE, rnd() * SIZE, 1, 1);
   }
 
-  const repeat = { x: 10, y: 10 };
+  const repeat = perMetre(courses * 0.143);
   return {
     map: toTexture(color, true, repeat),
-    normalMap: toTexture(heightToNormalMap(heightC, 1.8), false, repeat),
+    normalMap: toTexture(heightToNormalMap(heightC, 2.2), false, repeat),
     roughnessMap: toTexture(rough, false, repeat),
     repeat,
   };
 }
 
-export function getRoofingTexture(optionId, colorHex) {
-  const key = `roof:${optionId}`;
-  if (!cache.has(key)) cache.set(key, shingleRoof(colorHex));
+// Standing-seam metal: flat pans between raised seams, running down the
+// slope — perpendicular to the shingle courses above, which run along it.
+function metalRoof(colorHex) {
+  const rgb = hexToRgb(colorHex);
+  const pans = 8;
+  const panW = SIZE / pans;
+  const color = canvas(); const cctx = color.getContext('2d');
+  const heightC = canvas(); const hctx = heightC.getContext('2d');
+  const rough = canvas(); const rctx = rough.getContext('2d');
+  cctx.fillStyle = shade(rgb, 6); cctx.fillRect(0, 0, SIZE, SIZE);
+  hctx.fillStyle = 'rgb(120,120,120)'; hctx.fillRect(0, 0, SIZE, SIZE);
+  rctx.fillStyle = 'rgb(105,105,105)'; rctx.fillRect(0, 0, SIZE, SIZE);
+  for (let i = 0; i < pans; i++) {
+    const x = i * panW;
+    // A faint stiffening rib down the middle of each pan, then the seam.
+    hctx.fillStyle = 'rgb(132,132,132)'; hctx.fillRect(x + panW * 0.5 - 1, 0, 2, SIZE);
+    const g = cctx.createLinearGradient(x, 0, x + 8, 0);
+    g.addColorStop(0, shade(rgb, 30)); g.addColorStop(1, shade(rgb, -12));
+    cctx.fillStyle = g; cctx.fillRect(x, 0, 8, SIZE);
+    hctx.fillStyle = 'rgb(235,235,235)'; hctx.fillRect(x + 1, 0, 5, SIZE);
+    hctx.fillStyle = 'rgb(60,60,60)'; hctx.fillRect(x + 6, 0, 2, SIZE);
+    rctx.fillStyle = 'rgb(80,80,80)'; rctx.fillRect(x, 0, 8, SIZE);
+  }
+  // 8 pans at 16 inches (406 mm).
+  const repeat = perMetre(pans * 0.406);
+  return {
+    map: toTexture(color, true, repeat),
+    normalMap: toTexture(heightToNormalMap(heightC, 2.4), false, repeat),
+    roughnessMap: toTexture(rough, false, repeat),
+    repeat,
+  };
+}
+
+export function getRoofingTexture(optionId, colorHex, type = 'shingle') {
+  const key = `roof:${type}:${optionId}`;
+  if (!cache.has(key)) cache.set(key, type === 'metal' ? metalRoof(colorHex) : shingleRoof(colorHex));
   return cache.get(key);
 }
 
@@ -340,32 +393,109 @@ function grassTexture() {
   return { map: toTexture(color, true), roughnessMap: toTexture(rough), repeat: { x: 40, y: 40 } };
 }
 
-function concreteTexture() {
+// Concrete in three finishes, any colour. Control joints in every finish;
+// broom gets fine parallel striations, exposed aggregate a dense field of
+// stones, stamped slate irregular flagstones with grout lines.
+function concreteTexture(finish = 'broom', colorHex = '#b9b6ad') {
+  const rgb = hexToRgb(colorHex);
   const color = canvas(); const cctx = color.getContext('2d');
   const heightC = canvas(); const hctx = heightC.getContext('2d');
-  const rnd = seededRandom(88);
-  cctx.fillStyle = '#b9b6ad'; cctx.fillRect(0, 0, SIZE, SIZE);
+  const rough = canvas(); const rctx = rough.getContext('2d');
+  const rnd = seededRandom(finish === 'stamped' ? 311 : finish === 'aggregate' ? 211 : 88);
+  cctx.fillStyle = shade(rgb, 0); cctx.fillRect(0, 0, SIZE, SIZE);
   hctx.fillStyle = 'rgb(150,150,150)'; hctx.fillRect(0, 0, SIZE, SIZE);
+  rctx.fillStyle = 'rgb(232,232,232)'; rctx.fillRect(0, 0, SIZE, SIZE);
+
+  if (finish === 'aggregate') {
+    for (let i = 0; i < 9000; i++) {
+      const x = rnd() * SIZE, y = rnd() * SIZE, r = 1 + rnd() * 2.6;
+      const j = (rnd() - 0.5) * 70;
+      cctx.fillStyle = shade({ r: rgb.r * 0.9 + 20, g: rgb.g * 0.88 + 16, b: rgb.b * 0.85 + 10 }, j);
+      cctx.beginPath(); cctx.arc(x, y, r, 0, Math.PI * 2); cctx.fill();
+      hctx.fillStyle = `rgb(${190 + j / 2},${190 + j / 2},${190 + j / 2})`;
+      hctx.beginPath(); hctx.arc(x, y, r, 0, Math.PI * 2); hctx.fill();
+      rctx.fillStyle = 'rgb(170,170,170)';
+      rctx.beginPath(); rctx.arc(x, y, r, 0, Math.PI * 2); rctx.fill();
+    }
+  } else if (finish === 'stamped') {
+    // Irregular flagstones: a jittered grid of quads, each its own shade.
+    const n = 5, cell = SIZE / n;
+    const pt = [];
+    for (let i = 0; i <= n; i++) {
+      pt.push([]);
+      for (let j = 0; j <= n; j++) {
+        const edge = i === 0 || j === 0 || i === n || j === n;
+        pt[i].push([i * cell + (edge ? 0 : (rnd() - 0.5) * cell * 0.45), j * cell + (edge ? 0 : (rnd() - 0.5) * cell * 0.45)]);
+      }
+    }
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const q = [pt[i][j], pt[i + 1][j], pt[i + 1][j + 1], pt[i][j + 1]];
+      const jit = (rnd() - 0.5) * 34;
+      const path = () => { const p = new Path2D(); q.forEach(([x, y], k) => (k ? p.lineTo(x, y) : p.moveTo(x, y))); p.closePath(); return p; };
+      cctx.fillStyle = shade(rgb, jit); cctx.fill(path());
+      hctx.fillStyle = `rgb(${165 + jit / 2},${165 + jit / 2},${165 + jit / 2})`; hctx.fill(path());
+      cctx.strokeStyle = shade(rgb, -55); cctx.lineWidth = 5; cctx.stroke(path());
+      hctx.strokeStyle = 'rgb(40,40,40)'; hctx.lineWidth = 6; hctx.stroke(path());
+    }
+  } else {
+    for (let y = 0; y < SIZE; y += 2) {
+      const j = (rnd() - 0.5) * 30;
+      hctx.fillStyle = `rgb(${150 + j},${150 + j},${150 + j})`;
+      hctx.fillRect(0, y, SIZE, 1);
+    }
+  }
   cctx.globalAlpha = 0.06;
   for (let i = 0; i < 6000; i++) {
     cctx.fillStyle = rnd() > 0.5 ? '#fff' : '#000';
     cctx.fillRect(rnd() * SIZE, rnd() * SIZE, 1, 1);
   }
   cctx.globalAlpha = 1;
-  // control joints
-  cctx.strokeStyle = 'rgba(0,0,0,0.25)'; cctx.lineWidth = 3;
-  hctx.strokeStyle = 'rgba(30,30,30,1)'; hctx.lineWidth = 3;
-  for (let i = 1; i < 4; i++) {
-    const x = (SIZE / 4) * i;
-    cctx.beginPath(); cctx.moveTo(x, 0); cctx.lineTo(x, SIZE); cctx.stroke();
-    hctx.beginPath(); hctx.moveTo(x, 0); hctx.lineTo(x, SIZE); hctx.stroke();
+  if (finish !== 'stamped') {
+    cctx.strokeStyle = 'rgba(0,0,0,0.25)'; cctx.lineWidth = 3;
+    hctx.strokeStyle = 'rgba(30,30,30,1)'; hctx.lineWidth = 3;
+    for (let i = 1; i < 4; i++) {
+      const x = (SIZE / 4) * i;
+      cctx.beginPath(); cctx.moveTo(x, 0); cctx.lineTo(x, SIZE); cctx.stroke();
+      hctx.beginPath(); hctx.moveTo(x, 0); hctx.lineTo(x, SIZE); hctx.stroke();
+    }
   }
-  return { map: toTexture(color, true), normalMap: toTexture(heightToNormalMap(heightC, 1.2)), repeat: { x: 3, y: 8 } };
+  return {
+    map: toTexture(color, true),
+    normalMap: toTexture(heightToNormalMap(heightC, finish === 'broom' ? 0.9 : 1.6)),
+    roughnessMap: toTexture(rough),
+    repeat: { x: 3, y: 8 },
+  };
 }
 
-let groundCache = null, drivewayCache = null;
+// Wood-look garage door: long vertical grain, for the walnut option.
+function woodGrain(colorHex) {
+  const rgb = hexToRgb(colorHex);
+  const color = canvas(256); const cctx = color.getContext('2d');
+  const rnd = seededRandom(4242);
+  cctx.fillStyle = shade(rgb, 0); cctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 260; i++) {
+    const x = rnd() * 256, w = 1 + rnd() * 3, j = (rnd() - 0.5) * 36;
+    cctx.fillStyle = shade(rgb, j); cctx.globalAlpha = 0.5;
+    cctx.fillRect(x, 0, w, 256);
+  }
+  cctx.globalAlpha = 1;
+  return { map: toTexture(color, true, { x: 2, y: 1 }) };
+}
+
+export function getConcreteFinish(finish, colorHex) {
+  const key = `concrete:${finish}:${colorHex}`;
+  if (!cache.has(key)) cache.set(key, concreteTexture(finish, colorHex));
+  return cache.get(key);
+}
+
+export function getWoodGrain(colorHex) {
+  const key = `wood:${colorHex}`;
+  if (!cache.has(key)) cache.set(key, woodGrain(colorHex));
+  return cache.get(key);
+}
+
+let groundCache = null;
 export function getGrassTexture() { return groundCache || (groundCache = grassTexture()); }
-export function getConcreteTexture() { return drivewayCache || (drivewayCache = concreteTexture()); }
 
 export function applyRepeat(tex, repeat) {
   if (!tex || !repeat) return;

@@ -1,6 +1,6 @@
 // "My Home" mode — unchanged in spirit from the original 2D tool: the
 // customer uploads a straight-on photo of their own house, picks a zone
-// (windows/siding/roofing/trim), and taps its four corners to fit a
+// (windows/siding/roofing/trim, from the buttons in the upload panel), and taps its four corners to fit a
 // perspective-correct opening or recolor a region. This stays a flat
 // <canvas> 2D tool by design — it draws on a real photo, so there's no 3D
 // scene to build here. The architecture leaves room to improve the fit
@@ -204,6 +204,8 @@ export class PhotoMode {
     if (win.windowStyle === 'doublehung') poly([[0, 0.5], [1, 0.5]]);
     if (win.windowStyle === 'slider') poly([[0.5, 0], [0.5, 1]]);
     if (win.windowStyle === 'casement') poly([[0.32, 0], [0.32, 1]]);
+    if (win.windowStyle === 'awning') poly([[0, 0.38], [1, 0.38]]);
+    if (win.windowStyle === 'baybow') { poly([[0.26, 0], [0.26, 1]]); poly([[0.74, 0], [0.74, 1]]); }
     if (win.windowGrille === 'sixoversix') {
       ctx.lineWidth = 2.5;
       poly([[1 / 3, 0], [1 / 3, 1]]); poly([[2 / 3, 0], [2 / 3, 1]]);
@@ -219,19 +221,19 @@ export class PhotoMode {
     const ctx = this.ctx, W = this.W, H = this.H;
     ctx.clearRect(0, 0, W, H);
     if (!this.img) {
-      ctx.fillStyle = '#1c1c1e'; ctx.fillRect(0, 0, W, H);
-      ctx.strokeStyle = 'rgba(234,234,232,0.2)'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]);
+      ctx.fillStyle = '#232c26'; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = 'rgba(252,249,239,0.25)'; ctx.lineWidth = 2; ctx.setLineDash([10, 8]);
       ctx.strokeRect(40, 40, W - 80, H - 80); ctx.setLineDash([]);
-      ctx.fillStyle = '#8a8a90'; ctx.font = "500 22px 'Space Grotesk', sans-serif"; ctx.textAlign = 'center';
+      ctx.fillStyle = '#b3b6af'; ctx.font = "600 22px Inter, system-ui, sans-serif"; ctx.textAlign = 'center';
       ctx.fillText('Choose a photo of your home to begin', W / 2, H / 2 - 8);
-      ctx.font = "400 13px 'Space Mono', monospace";
-      ctx.fillText('A STRAIGHT-ON ELEVATION WORKS BEST', W / 2, H / 2 + 20);
+      ctx.font = "400 15px Inter, system-ui, sans-serif";
+      ctx.fillText('A straight-on view of one side works best', W / 2, H / 2 + 20);
       ctx.textAlign = 'left';
       return;
     }
     const scale = Math.min(W / this.img.width, H / this.img.height);
     const dw = this.img.width * scale, dh = this.img.height * scale;
-    ctx.fillStyle = '#090909'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#141a17'; ctx.fillRect(0, 0, W, H);
     ctx.drawImage(this.img, (W - dw) / 2, (H - dh) / 2, dw, dh);
 
     ['siding', 'roofing', 'trim'].forEach((kind) => {
@@ -244,12 +246,12 @@ export class PhotoMode {
     this.windows.forEach((w) => this._drawWarpedWindow(w));
 
     if (this.tracing.length) {
-      ctx.strokeStyle = '#eaeae8'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+      ctx.strokeStyle = '#fcf9ef'; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
       ctx.beginPath();
       this.tracing.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
       ctx.stroke(); ctx.setLineDash([]);
       this.tracing.forEach((p) => {
-        ctx.fillStyle = '#eaeae8';
+        ctx.fillStyle = '#fcf9ef';
         ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
       });
     }

@@ -32,3 +32,13 @@
 # Fingerprinted-by-content assets that never change under the same name.
 /js/vendor/*
   Cache-Control: public, max-age=31536000, immutable
+
+# The visualizer's houses and code are not fingerprinted, so cache briefly
+# and revalidate in the background: a return visit loads instantly, and an
+# update reaches everyone within the hour, with the JS and the houses it
+# expects never more than an hour apart.
+/visualizer/models/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=604800
+
+/js/visualizer/*
+  Cache-Control: public, max-age=3600, stale-while-revalidate=604800

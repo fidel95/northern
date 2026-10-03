@@ -31,6 +31,28 @@ const SUN_PARAMS = {
   exposure: 1.02,
 };
 
+// Time-of-day presets: the same sky and lights, re-aimed and re-tinted.
+// Changing one costs nothing per frame — it only updates a few uniforms and
+// light colours — which is why this is the cheap "wow" rather than a second
+// environment map or a post-processing pass. Every preset keeps the sun on
+// the front of the house, where the camera looks.
+export const LIGHT_PRESETS = {
+  morning: {
+    sky: { ...SUN_PARAMS, elevation: 16, azimuth: 92, turbidity: 4.2, rayleigh: 1.6, exposure: 0.98 },
+    sun: { color: 0xffe0bd, intensity: 1.75 }, fog: 0xdde3e6, fill: { sky: 0xd8e2ea, ground: 0x4c4636, intensity: 0.42 }, ambient: 0.55,
+  },
+  midday: {
+    sky: { ...SUN_PARAMS },
+    sun: { color: 0xfff2df, intensity: 2.0 }, fog: 0xcbdce6, fill: { sky: 0xcfe0e8, ground: 0x4a4638, intensity: 0.4 }, ambient: 0.58,
+  },
+  evening: {
+    sky: { ...SUN_PARAMS, elevation: 11, azimuth: 30, turbidity: 4.5, rayleigh: 1.9, mieCoefficient: 0.005, exposure: 0.95 },
+    // Fog matched to the sky's colour at the horizon, or the ground's far
+    // edge shows as a pale band against it.
+    sun: { color: 0xffc28c, intensity: 1.6 }, fog: 0xc9c5c7, fill: { sky: 0xc9cfe0, ground: 0x4a3f33, intensity: 0.36 }, ambient: 0.5,
+  },
+};
+
 function configureSky(sky, params) {
   const u = sky.material.uniforms;
   u.turbidity.value = params.turbidity;
@@ -97,8 +119,22 @@ export function createLighting(renderer, scene, { shadows = true, shadowMapSize 
   const fill = new THREE.HemisphereLight(0xcfe0e8, 0x4a4638, 0.4);
   scene.add(fill);
 
+  function setPreset(id) {
+    const preset = LIGHT_PRESETS[id] || LIGHT_PRESETS.midday;
+    const dir = configureSky(sky, preset.sky);
+    sunLight.position.copy(dir).multiplyScalar(40);
+    sunLight.color.setHex(preset.sun.color);
+    sunLight.intensity = preset.sun.intensity;
+    renderer.toneMappingExposure = preset.sky.exposure;
+    scene.fog.color.setHex(preset.fog);
+    fill.color.setHex(preset.fill.sky);
+    fill.groundColor.setHex(preset.fill.ground);
+    fill.intensity = preset.fill.intensity;
+    ambient.intensity = preset.ambient;
+  }
+
   return {
-    sky, sunLight, fill, ambient,
+    sky, sunLight, fill, ambient, setPreset,
     dispose() {},
   };
 }

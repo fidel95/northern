@@ -66,7 +66,7 @@
   // the same words rather than silently dropping them — which is what happened
   // before, since the URL params were only ever read for the patio tab.
   var VISUALIZER_LABELS = {
-    style: { doublehung: 'Double Hung', casement: 'Casement', picture: 'Picture', slider: 'Slider' },
+    style: { doublehung: 'Double Hung', casement: 'Casement', picture: 'Picture', slider: 'Sliding', awning: 'Awning', baybow: 'Bay & bow' },
     color: { white: 'White', black: 'Black', bronze: 'Bronze', gray: 'Stone Gray' },
     glass: { clear: 'Clear', lowe: 'Low-E', obscure: 'Obscure' },
     grille: { none: 'No grilles', sixoversix: '6-over-6 grilles', prairie: 'Prairie grilles' }

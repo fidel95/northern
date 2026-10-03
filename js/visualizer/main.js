@@ -8,10 +8,11 @@ import {
 } from './sceneSetup.js';
 import { createCameraRig } from './cameraRig.js';
 import { createLighting, loadHDRIEnvironment } from './lighting.js';
-import { buildEnvironment, setHouseFootprint } from './environment.js';
+import { buildEnvironment, setHouseFootprint, setConcrete, hardscapeMeshes } from './environment.js';
 import { loadHouse } from './houseLoader.js';
 import { HouseMaterialController } from './materials.js';
-import { houseConfigurations } from './config.js';
+import { houseConfigurations, optionById, MAT } from './config.js';
+import { mergeHouseMeshes } from './houseLoader.js';
 import { buildBeforeHouse, disposeBeforeHouse, renderCompareSplit } from './compareMode.js';
 import { VisualizerState } from './state.js';
 import { createUI } from './ui.js';
@@ -88,12 +89,33 @@ function init() {
     diagnostics.log(`init start — performance tier: ${tier.tier}`);
 
     const renderer = createRenderer(canvas, tier);
+    // ?debug=1 only: lets a test harness read draw calls and triangles
+    // (renderer.info) without a debugger. Never set on a normal visit.
+    if (new URLSearchParams(location.search).get('debug') === '1') window.__viz = { renderer, scene: null };
     diagnostics.log(`renderer created\n${collectRendererInfo(renderer)}`);
     const scene = createScene();
+    if (window.__viz) window.__viz.scene = scene;
     const rig = createCameraRig(canvas);
-    createLighting(renderer, scene, tier);
+    const lighting = createLighting(renderer, scene, tier);
+
+    // Morning / Midday / Evening: re-aims the sun and re-tints the sky.
+    const lightButtons = root.querySelectorAll('[data-light]');
+    lightButtons.forEach((btn) => btn.addEventListener('click', () => {
+      lighting.setPreset(btn.getAttribute('data-light'));
+      lightButtons.forEach((b) => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+      markActive();
+    }));
     diagnostics.log('lighting created');
     scene.add(buildEnvironment());
+
+    // The driveway and walk live in the environment, not the house GLB, so
+    // the Concrete choice reaches them here rather than through
+    // HouseMaterialController (which handles the stoops on the house).
+    function applyConcrete() {
+      const finish = optionById('concrete', state.get('concrete'));
+      const tint = optionById('concreteColor', state.get('concreteColor'));
+      setConcrete(finish.id, tint.color);
+    }
     diagnostics.log('environment (ground/driveway) added');
 
     fitRendererToContainer(renderer, rig.camera, canvasWrap, tier.pixelRatioCap);
@@ -202,9 +224,29 @@ function init() {
         houseGroup.position.y -= world.y;
       }
 
+      // Where the walk and driveway should meet the house, read off the
+      // model's own Door_Front and Garage_Door nodes BEFORE the merge below
+      // folds their meshes away. Measured from each subtree's bounds, not the
+      // node's position: ASSET-SPEC.md's door groups are empties whose
+      // offset lives on their child meshes.
+      const doorNode = houseGroup.getObjectByName('Door_Front');
+      const garageNode = houseGroup.getObjectByName('Garage_Door');
+      const doorBox = doorNode ? new THREE.Box3().setFromObject(doorNode) : null;
+      const garageBox = garageNode ? new THREE.Box3().setFromObject(garageNode) : null;
+
+      // Hundreds of small boxes become one mesh per material: far fewer draw
+      // calls, which is most of what orbiting costs on a phone.
+      mergeHouseMeshes(houseGroup, [MAT.WINDOW_GLASS, MAT.DOOR_GLASS]);
+
       materialController = new HouseMaterialController(houseGroup);
       diagnostics.log(`material groups found: ${[...materialController.groups.keys()].join(', ')}`);
       materialController.apply(state.selections);
+      applyConcrete();
+      // Compile every material's shader now, in the background where the
+      // driver supports it, rather than as a stall on the first frame
+      // someone drags — the more materials a house has, the bigger that
+      // first-touch hitch otherwise is on a phone.
+      if (renderer.compileAsync) renderer.compileAsync(scene, rig.camera).catch(() => {});
       diagnostics.log('materials applied');
 
       // Before/After comparison needs a second copy of the same house on a
@@ -216,7 +258,7 @@ function init() {
       // DEFAULT_SELECTIONS to it leaves houseGroup's own materials alone.
       ({ beforeGroup, controller: beforeMaterialController } = buildBeforeHouse(houseGroup, scene));
 
-      raycastTargets = [];
+      raycastTargets = [...hardscapeMeshes()];
       houseGroup.traverse((o) => { if (o.isMesh) raycastTargets.push(o); });
 
       // Frame the camera and re-lay the yard from the model's ACTUAL
@@ -234,12 +276,16 @@ function init() {
       // sits at the origin with the offset carried on its child meshes — so
       // reading its translation put the front walk at the centre of the house
       // regardless of where the entry actually is.
-      const doorNode = houseGroup.getObjectByName('Door_Front');
-      const doorX = doorNode
-        ? new THREE.Box3().setFromObject(doorNode).getCenter(new THREE.Vector3()).x
+      const doorX = doorBox
+        ? doorBox.getCenter(new THREE.Vector3()).x
         : bounds.min.x + span.x / 2;
+      const garage = garageBox ? {
+        x: garageBox.getCenter(new THREE.Vector3()).x,
+        z: garageBox.max.z,
+        width: garageBox.max.x - garageBox.min.x,
+      } : null;
       setHouseFootprint({
-        width: span.x, depth: span.z, doorX, minX: bounds.min.x, maxX: bounds.max.x, maxZ: bounds.max.z,
+        width: span.x, depth: span.z, doorX, minX: bounds.min.x, maxX: bounds.max.x, maxZ: bounds.max.z, garage,
       });
       rig.frameHouse(bounds);
       hud.hidden = false;
@@ -314,6 +360,7 @@ function init() {
     onSelect: (key, value) => {
       state.set(key, value);
       if (materialController) materialController.apply(state.selections);
+      if (key === 'concrete' || key === 'concreteColor') applyConcrete();
     },
     onHouseChange: (id) => {
       if (id === state.get('house')) return;
@@ -332,11 +379,13 @@ function init() {
     onResetConfig: () => {
       state.reset();
       if (materialController) materialController.apply(state.selections);
+      applyConcrete();
       photoMode.reset();
       ui.resetCompare();
     },
     onPickFile: (file) => photoMode.loadFile(file),
     onUndo: () => photoMode.undoLast(),
+    onPhotoZone: (zone) => photoMode.setZone(zone),
     // The compare slider's drag handle lives outside the <canvas> (a DOM
     // overlay), so it never fires the canvas pointer listeners that feed
     // the idle throttle above — without marking activity here too, dragging
@@ -360,11 +409,16 @@ function init() {
 
   // Open on the panel the link was most obviously about, so someone arriving
   // from a window-style link lands on windows rather than siding.
-  if (shared.doorStyle || shared.doorColor || shared.doorHardware) {
-    state.setPanelSection('doors');
-  } else if (shared.windowStyle || shared.windowFrame || shared.windowGlass || shared.windowGrille) {
-    state.setPanelSection('windows');
-  }
+  const LINK_PANELS = [
+    ['doors', ['doorStyle', 'doorColor', 'doorHardware', 'garageDoor']],
+    ['windows', ['windowStyle', 'windowFrame', 'windowGlass', 'windowGrille']],
+    ['roofing', ['roofType', 'roofing']],
+    ['gutters', ['gutter']],
+    ['concrete', ['concrete', 'concreteColor']],
+    ['siding', ['siding', 'trim']],
+  ];
+  const linked = LINK_PANELS.find(([, keys]) => keys.some((k) => shared[k]));
+  if (linked) state.setPanelSection(linked[0]);
 
   // present=1 opens straight into presentation mode, which is what makes the
   // link in a Salesforce lead useful on a tablet: the rep taps it and the

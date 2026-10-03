@@ -15,12 +15,18 @@ export const MAT = {
   DOOR_SLAB: 'MAT_DoorSlab',
   DOOR_GLASS: 'MAT_DoorGlass',
   DOOR_HARDWARE: 'MAT_DoorHardware',
+  GUTTER: 'MAT_Gutter',
+  GARAGE_DOOR: 'MAT_GarageDoor',
+  // On the house (stoops and porch steps) and on the ground (driveway and
+  // walk, built by environment.js): one Concrete choice covers both.
+  CONCRETE: 'MAT_Concrete',
 };
 
 // One entry per house model. `model` points at a GLB built to
-// visualizer/models/ASSET-SPEC.md — three genuinely different massings, all
-// obeying the same MAT_* material-name contract, so the same UI drives all
-// three and an artist-delivered replacement drops in with no code changes.
+// visualizer/models/ASSET-SPEC.md by generate-houses.py — five genuinely
+// different massings, all obeying the same MAT_* material-name contract, so
+// the same UI drives all of them and an artist-delivered replacement drops in
+// with no code changes.
 //
 // There are deliberately no camera settings here: cameraRig.js frames each
 // house from the loaded model's real bounding box, so a house that changes
@@ -29,7 +35,7 @@ export const houseConfigurations = {
   ranch: {
     id: 'ranch',
     name: 'Ranch',
-    description: 'Single-story, wide front elevation.',
+    description: 'Single-story under a hip roof, with an attached garage.',
     model: 'models/house-ranch.glb',
   },
   colonial: {
@@ -43,6 +49,18 @@ export const houseConfigurations = {
     name: 'Craftsman',
     description: 'Front gable over a full-width porch.',
     model: 'models/house-craftsman.glb',
+  },
+  capecod: {
+    id: 'capecod',
+    name: 'Cape Cod',
+    description: 'A story and a half: steep roof, two front dormers.',
+    model: 'models/house-capecod.glb',
+  },
+  farmhouse: {
+    id: 'farmhouse',
+    name: 'Farmhouse',
+    description: 'Two storeys, a deep porch and a garage wing.',
+    model: 'models/house-farmhouse.glb',
   },
 };
 
@@ -70,9 +88,18 @@ export const products = {
       swatch('shake', 'Cedar Shake', '#8A7458', { roughness: 0.92, pattern: 'shake' }),
     ],
   },
+  roofType: {
+    label: 'Roof type',
+    hint: null,
+    kind: 'list',
+    options: [
+      { id: 'shingle', name: 'Architectural shingle' },
+      { id: 'metal', name: 'Standing-seam metal' },
+    ],
+  },
   roofing: {
-    label: 'Roofing',
-    hint: 'Composite shingle color.',
+    label: 'Roof color',
+    hint: null,
     kind: 'swatch',
     options: [
       swatch('charcoal', 'Charcoal', '#2B2C2A', { roughness: 0.78 }),
@@ -102,7 +129,9 @@ export const products = {
       { id: 'doublehung', name: 'Double Hung' },
       { id: 'casement', name: 'Casement' },
       { id: 'picture', name: 'Picture' },
-      { id: 'slider', name: 'Slider' },
+      { id: 'slider', name: 'Sliding' },
+      { id: 'awning', name: 'Awning' },
+      { id: 'baybow', name: 'Bay & bow' },
     ],
   },
   windowFrame: {
@@ -148,7 +177,7 @@ export const products = {
   },
   doorColor: {
     label: 'Door color',
-    hint: null,
+    hint: 'Shutters, where a home has them, match the front door.',
     kind: 'swatch',
     options: [
       swatch('black', 'Black', '#1B1C1E', { roughness: 0.45 }),
@@ -166,6 +195,53 @@ export const products = {
       swatch('black', 'Matte Black', '#1c1c1c', { roughness: 0.35, metalness: 0.85 }),
       swatch('brass', 'Antique Brass', '#8a6a34', { roughness: 0.3, metalness: 0.9 }),
       swatch('nickel', 'Satin Nickel', '#9a9a96', { roughness: 0.35, metalness: 0.9 }),
+    ],
+  },
+  garageDoor: {
+    label: 'Garage door',
+    hint: 'On the homes with a garage: the ranch and the farmhouse.',
+    kind: 'swatch',
+    options: [
+      swatch('white', 'White', '#EEEDE8', { roughness: 0.5 }),
+      swatch('almond', 'Almond', '#D8CDB8', { roughness: 0.5 }),
+      swatch('sandstone', 'Sandstone', '#B9AE98', { roughness: 0.5 }),
+      swatch('charcoal', 'Charcoal', '#3A3B39', { roughness: 0.45 }),
+      swatch('black', 'Black', '#161616', { roughness: 0.45 }),
+      swatch('walnut', 'Walnut', '#5C4330', { roughness: 0.6, grain: true }),
+    ],
+  },
+  gutter: {
+    label: 'Gutters & downspouts',
+    hint: 'Seamless aluminum gutters and downspouts.',
+    kind: 'swatch',
+    options: [
+      swatch('white', 'White', '#EEEDE8', { roughness: 0.4 }),
+      swatch('almond', 'Almond', '#D8CDB8', { roughness: 0.4 }),
+      swatch('clay', 'Clay', '#8A7A66', { roughness: 0.42 }),
+      swatch('bronze', 'Dark Bronze', '#4A3B2C', { roughness: 0.38 }),
+      swatch('black', 'Black', '#161616', { roughness: 0.38 }),
+      swatch('gray', 'Pewter Gray', '#7C7E7C', { roughness: 0.38 }),
+    ],
+  },
+  concrete: {
+    label: 'Concrete finish',
+    hint: 'Driveway, front walk and steps.',
+    kind: 'list',
+    options: [
+      { id: 'broom', name: 'Broom finish' },
+      { id: 'aggregate', name: 'Exposed aggregate' },
+      { id: 'stamped', name: 'Stamped slate' },
+    ],
+  },
+  concreteColor: {
+    label: 'Concrete color',
+    hint: null,
+    kind: 'swatch',
+    options: [
+      swatch('natural', 'Natural Gray', '#B9B6AD', { roughness: 0.92 }),
+      swatch('sand', 'Desert Sand', '#C9B79A', { roughness: 0.92 }),
+      swatch('buff', 'Buff', '#B59F7E', { roughness: 0.92 }),
+      swatch('charcoal', 'Charcoal', '#6E6C68', { roughness: 0.9 }),
     ],
   },
 };
@@ -187,4 +263,9 @@ export const DEFAULT_SELECTIONS = {
   doorStyle: 'single',
   doorColor: 'black',
   doorHardware: 'black',
+  roofType: 'shingle',
+  garageDoor: 'white',
+  gutter: 'white',
+  concrete: 'broom',
+  concreteColor: 'natural',
 };

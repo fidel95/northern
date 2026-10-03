@@ -42,6 +42,20 @@ const PARAM = {
   doorStyle: 'door',
   doorColor: 'doorcolor',
   doorHardware: 'doorhw',
+  roofType: 'rooftype',
+  garageDoor: 'garage',
+  gutter: 'gutter',
+  concrete: 'concrete',
+  concreteColor: 'concretecolor',
+};
+
+// Names other pages have used for the same option. /windows/ links say
+// "sliding" for what the catalog calls a slider; /doors/ links name patio and
+// entry styles the 3D door doesn't model separately, so each lands on the
+// nearest one it does.
+const ALIASES = {
+  windowStyle: { sliding: 'slider', doublehung: 'doublehung' },
+  doorStyle: { patio: 'french', sliding: 'french', multislide: 'french', double: 'sidelights', entry: 'single' },
 };
 
 // Presentation mode is not a product selection, so it stays out of the map
@@ -80,8 +94,9 @@ export function selectionsFromSearch(search) {
   const out = {};
 
   Object.keys(PARAM).forEach((key) => {
-    const raw = params.get(PARAM[key]);
+    let raw = params.get(PARAM[key]);
     if (typeof raw !== 'string') return;
+    if (ALIASES[key] && ALIASES[key][raw]) raw = ALIASES[key][raw];
     if (allowedIds(key).includes(raw)) out[key] = raw;
   });
 

@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """
-Generates the three demo-home GLBs the visualizer ships with:
-house-ranch.glb, house-colonial.glb, house-craftsman.glb.
+Generates the five demo-home GLBs the visualizer ships with:
+house-ranch.glb, house-colonial.glb, house-craftsman.glb, house-capecod.glb,
+house-farmhouse.glb.
 
-These are box-massing models, not artist work — but they are three
-genuinely *different* massings (a wide single-storey side-gable, a two-storey
-symmetric colonial, and a front-gable craftsman with a full-width porch), so
-the visualizer's home picker changes something real. Every part follows the
+These are box-massing models, not artist work — but they are five
+genuinely *different* massings (a hip-roof ranch with a garage, a two-storey
+colonial, a front-gable craftsman with a full-width porch, a Cape Cod with
+dormers, and a two-storey farmhouse with a porch and garage wing), so the
+visualizer's home picker changes something real. Every house has gutters and
+downspouts, sills and head casings, and concrete steps or a porch step, so
+all six services the site sells show up on it. Every part follows the
 node/material naming convention in ASSET-SPEC.md, so an artist-delivered GLB
 that uses the same MAT_* names replaces any one of these with zero
 application-code changes.
@@ -196,8 +200,41 @@ def add_box_node(b: Builder, name, material_idx, size, position, rotation_deg=(0
     return node_idx
 
 
+def add_world_box(b: Builder, name, material_idx, size, position, parent_children=None, rotation_deg=None):
+    """A box with its own geometry and UVs in world metres, offset by its
+    position, for surfaces that carry a tiling texture: walls. The app's
+    siding textures are sized in real metres, so lap courses come out the
+    same height on every wall of every house and line up around corners —
+    the shared unit cube's 0..1-per-face UVs stretch them to fit instead."""
+    sx, sy, sz = size
+    px, py, pz = position
+    hx, hy, hz = sx / 2, sy / 2, sz / 2
+    faces = [
+        ((0, 0, 1), [(-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)], lambda x, y, z: (x + px, -(y + py))),
+        ((0, 0, -1), [(hx, -hy, -hz), (-hx, -hy, -hz), (-hx, hy, -hz), (hx, hy, -hz)], lambda x, y, z: (-(x + px), -(y + py))),
+        ((1, 0, 0), [(hx, -hy, hz), (hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz)], lambda x, y, z: (-(z + pz), -(y + py))),
+        ((-1, 0, 0), [(-hx, -hy, -hz), (-hx, -hy, hz), (-hx, hy, hz), (-hx, hy, -hz)], lambda x, y, z: (z + pz, -(y + py))),
+        ((0, 1, 0), [(-hx, hy, hz), (hx, hy, hz), (hx, hy, -hz), (-hx, hy, -hz)], lambda x, y, z: (x + px, z + pz)),
+        ((0, -1, 0), [(-hx, -hy, -hz), (hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, hz)], lambda x, y, z: (x + px, z + pz)),
+    ]
+    positions, normals, uvs, indices = [], [], [], []
+    for normal, corners, uvf in faces:
+        base = len(positions)
+        for c in corners:
+            positions.append(c)
+            normals.append(normal)
+            uvs.append(uvf(*c))
+        indices += [base, base + 1, base + 2, base, base + 2, base + 3]
+    node = b.add_mesh_node(name, positions, normals, uvs, indices, material_idx, position, parent_children)
+    if rotation_deg:
+        # UVs stay in the box's own (unrotated) frame, which is what a tilted
+        # roof slab wants: courses along its width, counted down its slope.
+        b.nodes[node].rotation = list(euler_to_quat(*[math.radians(d) for d in rotation_deg]))
+    return node
+
+
 def add_extruded_polygon(b: Builder, name, material_idx, poly, u_axis, v_axis, extent,
-                         position=(0, 0, 0), parent_children=None):
+                         position=(0, 0, 0), parent_children=None, world_uv=False):
     """A convex polygon given in the (u_axis, v_axis) plane, extruded `extent`
     metres and centred on the extrusion axis, which is u_axis x v_axis.
 
@@ -237,14 +274,25 @@ def add_extruded_polygon(b: Builder, name, material_idx, poly, u_axis, v_axis, e
         for i in range(1, len(face) - 1):
             indices.extend([base, base + i, base + i + 1])
 
-    cap_uv = [((p[0] - u_min) / u_span, (p[1] - v_min) / v_span) for p in pts]
+    if world_uv:
+        # Metres: caps (gable infill) as (across, -height), so siding courses
+        # match the walls; sides (roof surfaces) as (along the extrusion,
+        # distance from the edge's first point), so shingle courses run along
+        # the ridge and are counted down the slope from it.
+        cap_uv = [(p[0], -p[1]) for p in pts]
+    else:
+        cap_uv = [((p[0] - u_min) / u_span, (p[1] - v_min) / v_span) for p in pts]
     emit([world(p, 1) for p in pts], cap_uv)
     emit([world(p, -1) for p in reversed(pts)], list(reversed(cap_uv)))
 
     for i in range(len(pts)):
         a, c = pts[i], pts[(i + 1) % len(pts)]
-        emit([world(a, -1), world(c, -1), world(c, 1), world(a, 1)],
-             [(0, 0), (1, 0), (1, 1), (0, 1)])
+        if world_uv:
+            L = math.hypot(c[0] - a[0], c[1] - a[1])
+            side_uv = [(-half, 0), (-half, L), (half, L), (half, 0)]
+        else:
+            side_uv = [(0, 0), (1, 0), (1, 1), (0, 1)]
+        emit([world(a, -1), world(c, -1), world(c, 1), world(a, 1)], side_uv)
 
     # `indices`, not range(len(positions)): every face contributes four
     # vertices that emit() fan-triangulates, so drawing the vertex list
@@ -296,7 +344,7 @@ def add_gable_roof(b, mats, children, prefix, ridge_axis, ridge_span, run_span,
             (-sign * RIDGE_MITER, ridge_y + RIDGE_MITER * t - tv),
         ]
         add_extruded_polygon(b, f'{prefix}_Slope_{tag}', mats['roof'], profile,
-                             run_axis, 'y', extent, parent_children=children)
+                             run_axis, 'y', extent, parent_children=children, world_uv=True)
 
     ridge_size = {'x': 0.0, 'y': 0.16, 'z': 0.0}
     ridge_size[ridge_axis] = extent
@@ -323,7 +371,7 @@ def add_gable_roof(b, mats, children, prefix, ridge_axis, ridge_span, run_span,
         add_extruded_polygon(b, f'{prefix}_GableFill_{tag}', mats['siding'], gable_profile,
                              run_axis, 'y', 0.16,
                              position=(offset['x'], offset['y'], offset['z']),
-                             parent_children=children)
+                             parent_children=children, world_uv=True)
 
     return ridge_y, half_run, tv, extent
 
@@ -340,6 +388,196 @@ def add_eave_fascia(b, mats, children, prefix, ridge_axis, wall_h, half_run, tv,
         add_box_node(b, f'{prefix}_Fascia_{tag}', mats['trim'],
                      (size['x'], size['y'], size['z']),
                      (pos['x'], pos['y'], pos['z']), parent_children=children)
+
+
+def add_faces_mesh(b, name, material_idx, faces, position=(0, 0, 0), parent_children=None):
+    """A mesh from explicit planar polygons: [(points3d, uvs), ...], each
+    convex and wound CCW as seen from the side it should face. For surfaces
+    that aren't axis-aligned extrusions — the hip roof's four planes."""
+    positions, normals, uvs, indices = [], [], [], []
+    for pts, face_uvs in faces:
+        base = len(positions)
+        n = _normal(pts[0], pts[1], pts[2])
+        for p, uv in zip(pts, face_uvs):
+            positions.append(p)
+            normals.append(n)
+            uvs.append(uv)
+        for i in range(1, len(pts) - 1):
+            indices.extend([base, base + i, base + i + 1])
+    return b.add_mesh_node(name, positions, normals, uvs, indices, material_idx, position, parent_children)
+
+
+def add_hip_roof(b, mats, children, prefix, width, depth, wall_h, pitch_deg, overhang):
+    """Four slopes meeting at a short ridge along X (width must exceed depth).
+    Top planes, a matching underside offset down by the slab thickness, and
+    the vertical eave edges between them. UVs are metres, like the gable
+    slopes, so shingle courses keep the same size on every plane."""
+    t = math.tan(math.radians(pitch_deg))
+    hx, hz = width / 2 + overhang, depth / 2 + overhang
+    rise = hz * t
+    ridge_y = wall_h + rise
+    rx = hx - hz                     # ridge half-length: hips at 45 degrees in plan
+    tv = ROOF_T / math.cos(math.radians(pitch_deg))
+    sin_p = math.sin(math.radians(pitch_deg))
+
+    # Metres, matching the gable slopes: u along the eave, v down the slope
+    # from the ridge line.
+    def uv(p):
+        return (p[0], (ridge_y - p[1]) / sin_p)
+
+    def uv_side(p):
+        return (p[2], (ridge_y - p[1]) / sin_p)
+
+    e = {  # eave corners and ridge ends, at the top surface
+        'fl': (-hx, wall_h, hz), 'fr': (hx, wall_h, hz),
+        'bl': (-hx, wall_h, -hz), 'br': (hx, wall_h, -hz),
+        'rl': (-rx, ridge_y, 0.0), 'rr': (rx, ridge_y, 0.0),
+    }
+    planes = [
+        ([e['fl'], e['fr'], e['rr'], e['rl']], uv),        # front
+        ([e['br'], e['bl'], e['rl'], e['rr']], uv),        # back
+        ([e['bl'], e['fl'], e['rl']], uv_side),            # left hip
+        ([e['fr'], e['br'], e['rr']], uv_side),            # right hip
+    ]
+    faces = []
+    for pts, f in planes:
+        faces.append((pts, [f(p) for p in pts]))
+        low = [(p[0], p[1] - tv, p[2]) for p in reversed(pts)]
+        faces.append((low, [f((p[0], p[1] + tv, p[2])) for p in low]))
+    ring = [e['fl'], e['fr'], e['br'], e['bl']]
+    for i in range(4):
+        a, c = ring[i], ring[(i + 1) % 4]
+        faces.append(([(a[0], a[1] - tv, a[2]), (c[0], c[1] - tv, c[2]), c, a],
+                      [(0, 0), (1, 0), (1, 1), (0, 1)]))
+    add_faces_mesh(b, f'{prefix}_Hip', mats['roof'], faces, parent_children=children)
+    add_box_node(b, f'{prefix}_Ridge', mats['roof'], (2 * rx + 0.2, 0.16, 0.18),
+                 (0, ridge_y + 0.02, 0), parent_children=children)
+    return ridge_y, hz, tv, hx
+
+
+def add_hip_fascia(b, mats, children, prefix, wall_h, hx, hz, tv):
+    """Fascia on all four eaves of a hip roof."""
+    for tag, size, pos in (
+        ('F', (2 * hx + 0.3, tv + 0.03, 0.16), (0, wall_h - tv / 2, hz + 0.07)),
+        ('B', (2 * hx + 0.3, tv + 0.03, 0.16), (0, wall_h - tv / 2, -hz - 0.07)),
+        ('L', (0.16, tv + 0.03, 2 * hz + 0.3), (-hx - 0.07, wall_h - tv / 2, 0)),
+        ('R', (0.16, tv + 0.03, 2 * hz + 0.3), (hx + 0.07, wall_h - tv / 2, 0)),
+    ):
+        add_box_node(b, f'{prefix}_Fascia_{tag}', mats['trim'], size, pos, parent_children=children)
+
+
+GUTTER = 0.13       # gutter cross-section, metres
+SPOUT = 0.08        # downspout cross-section
+
+
+def add_gutter_run(b, mats, children, name, axis, length, eave_y, out, wall_face, ends):
+    """One gutter along `axis` ('x' or 'z') hung off the fascia, at signed
+    distance `out` from the house centre on the other axis, with downspouts
+    at the `ends` (positions along `axis`) dropping to the ground beside the
+    wall at `wall_face`."""
+    other = 'z' if axis == 'x' else 'x'
+    sign = 1 if out > 0 else -1
+    gy = eave_y - GUTTER / 2 - 0.02
+
+    def vec(along, across, y):
+        v = {'x': 0.0, 'y': y, 'z': 0.0}
+        v[axis], v[other] = along, across
+        return (v['x'], v['y'], v['z'])
+
+    def size(along, across, h):
+        s = {'x': 0.0, 'y': h, 'z': 0.0}
+        s[axis], s[other] = along, across
+        return (s['x'], s['y'], s['z'])
+
+    add_box_node(b, f'{name}_Gutter', mats['gutter'], size(length, GUTTER, GUTTER),
+                 vec(0, out, gy), parent_children=children)
+    wall_x = sign * (wall_face + SPOUT / 2 + 0.03)
+    for i, at in enumerate(ends, start=1):
+        # Elbow back from the gutter to the wall, the drop, and a kick-out.
+        reach = abs(out - wall_x)
+        add_box_node(b, f'{name}_Elbow_{i}', mats['gutter'], size(SPOUT, reach, SPOUT),
+                     vec(at, (out + wall_x) / 2, gy - GUTTER / 2 - SPOUT / 2), parent_children=children)
+        drop_h = gy - GUTTER / 2 - SPOUT - 0.1
+        add_box_node(b, f'{name}_Downspout_{i}', mats['gutter'], size(SPOUT, SPOUT, drop_h),
+                     vec(at, wall_x, 0.1 + drop_h / 2), parent_children=children)
+        add_box_node(b, f'{name}_Kickout_{i}', mats['gutter'], size(SPOUT, 0.34, SPOUT * 0.8),
+                     vec(at, wall_x + sign * 0.15, 0.08), parent_children=children)
+
+
+def add_window_trim(b, mats, children, name, side, coord, sill_y, w, h, faces):
+    """A sill below and a head casing above a window, in trim colour."""
+    if side in ('front', 'back'):
+        o = 1 if side == 'front' else -1
+        z = o * (faces['front'] + 0.09)
+        add_box_node(b, f'{name}_Sill', mats['trim'], (w + 0.34, 0.06, 0.16),
+                     (coord, sill_y - 0.11, z), parent_children=children)
+        add_box_node(b, f'{name}_Head', mats['trim'], (w + 0.30, 0.12, 0.10),
+                     (coord, sill_y + h + 0.14, z - o * 0.02), parent_children=children)
+    else:
+        o = 1 if side == 'right' else -1
+        x = o * (faces['side'] + 0.09)
+        add_box_node(b, f'{name}_Sill', mats['trim'], (0.16, 0.06, w + 0.34),
+                     (x, sill_y - 0.11, coord), parent_children=children)
+        add_box_node(b, f'{name}_Head', mats['trim'], (0.10, 0.12, w + 0.30),
+                     (x - o * 0.02, sill_y + h + 0.14, coord), parent_children=children)
+
+
+def add_garage(b, mats, spec, faces):
+    """A front-gable garage wing beside the main house, with a sectional door
+    and its own gutters. Returns (group node, garage door group node)."""
+    g = spec['garage']
+    gw, gd, gh = g['w'], g['d'], g['wall_h']
+    side = 1 if g['side'] == 'right' else -1
+    cx = side * (spec['width'] / 2 + gw / 2 - 0.1)
+    cz = faces['front'] - gd / 2 - WALL_T / 2 + g.get('front_offset', 0.0)
+    kids = []
+    add_world_box(b, 'Garage_Wall_Front', mats['siding'], (gw, gh, WALL_T), (0, gh / 2, gd / 2), parent_children=kids)
+    add_world_box(b, 'Garage_Wall_Back', mats['siding'], (gw, gh, WALL_T), (0, gh / 2, -gd / 2), parent_children=kids)
+    add_world_box(b, 'Garage_Wall_Side', mats['siding'], (WALL_T, gh, gd), (side * gw / 2, gh / 2, 0), parent_children=kids)
+    add_box_node(b, 'Garage_Foundation', mats['foundation'], (gw + 0.3, 0.54, gd + 0.3), (0, -0.23, 0), parent_children=kids)
+
+    ridge_y, half_run, tv, extent = add_gable_roof(b, mats, kids, 'Garage_Roof', 'z', gd, gw, gh, g['pitch'], 0.35)
+    add_eave_fascia(b, mats, kids, 'Garage_Trim', 'z', gh, half_run, tv, extent)
+    for s, tag in ((1, 'R'), (-1, 'L')):
+        add_gutter_run(b, mats, kids, f'Garage_Gutter_{tag}', 'z', extent, gh, s * (half_run + 0.215),
+                       gw / 2 + WALL_T / 2, [gd / 2 - 0.25] if s == side else [])
+
+    # Sectional door: four panels with shadow gaps, inside a trim casing.
+    dw, dh = g['door_w'], g['door_h']
+    zf = gd / 2 + WALL_T / 2
+    door = []
+    add_box_node(b, 'Garage_Door_Recess', mats['recess'], (dw, dh, 0.04), (0, dh / 2, zf + 0.005), parent_children=door)
+    panel_h = (dh - 0.05 * 3) / 4
+    for i in range(4):
+        y = panel_h / 2 + i * (panel_h + 0.05)
+        add_box_node(b, f'Garage_Door_Panel_{i + 1}', mats['garage'], (dw - 0.04, panel_h, 0.05),
+                     (0, y, zf + 0.04), parent_children=door)
+    add_box_node(b, 'Garage_Door_Casing_Head', mats['trim'], (dw + 0.36, 0.16, 0.10), (0, dh + 0.08, zf + 0.04), parent_children=door)
+    for s in (1, -1):
+        add_box_node(b, f'Garage_Door_Casing_{"R" if s > 0 else "L"}', mats['trim'], (0.16, dh, 0.10),
+                     (s * (dw / 2 + 0.1), dh / 2, zf + 0.04), parent_children=door)
+    door_grp = add_empty_node(b, 'Garage_Door', children=door)
+    kids.append(door_grp)
+    for cxs in (-gw / 2, gw / 2):
+        add_box_node(b, f'Garage_CornerBoard_{"L" if cxs < 0 else "R"}', mats['trim'], (0.22, gh, 0.22),
+                     (cxs, gh / 2, gd / 2), parent_children=kids)
+    return add_empty_node(b, 'Garage', position=(cx, 0, cz), children=kids)
+
+
+def add_dormer(b, mats, name, dx, z_front, roof_y_at, w, wall_h_box, depth_box, pitch, faces_windows):
+    """A gabled dormer on the front roof slope. Its box sits on the slope at
+    its front face and runs back into the roof; the window goes on its face."""
+    kids = []
+    base_y = roof_y_at(z_front) - 0.05
+    top_y = base_y + wall_h_box
+    add_world_box(b, f'{name}_Box', mats['siding'], (w, wall_h_box, depth_box),
+                 (0, base_y + wall_h_box / 2, 0), parent_children=kids)
+    ridge_y, half_run, tv, extent = add_gable_roof(b, mats, kids, f'{name}_Roof', 'z', depth_box, w, top_y, pitch, 0.15)
+    add_eave_fascia(b, mats, kids, f'{name}_Trim', 'z', top_y, half_run, tv, extent)
+    # Centred on the box, which is what add_gable_roof assumes.
+    grp = add_empty_node(b, name, position=(dx, 0, z_front - depth_box / 2), children=kids)
+    faces_windows.append((dx, base_y + 0.25, w - 0.6, wall_h_box - 0.45, z_front))
+    return grp
 
 
 def add_window(b, mats, name, side, coord, sill_y, w, h, faces):
@@ -398,9 +636,9 @@ def add_porch(b, mats, children, spec, faces):
     run = (z_out + 0.3) - z_in
     drop = run * math.tan(math.radians(pitch))
     slope_len = run / math.cos(math.radians(pitch))
-    add_box_node(b, 'Porch_Roof', mats['roof'], (width + 0.7, 0.12, slope_len),
-                 (0, p['roof_y'] + drop / 2, z_in + run / 2), rotation_deg=(pitch, 0, 0),
-                 parent_children=children)
+    add_world_box(b, 'Porch_Roof', mats['roof'], (width + 0.7, 0.12, slope_len),
+                  (0, p['roof_y'] + drop / 2, z_in + run / 2), rotation_deg=(pitch, 0, 0),
+                  parent_children=children)
     add_box_node(b, 'Porch_Fascia', mats['trim'], (width + 0.7, 0.16, 0.14),
                  (0, p['roof_y'] - 0.04, z_out + 0.3), parent_children=children)
 
@@ -408,7 +646,8 @@ def add_porch(b, mats, children, spec, faces):
 def build(spec):
     b = Builder()
     width, depth, wall_h = spec['width'], spec['depth'], spec['wall_h']
-    overhang, pitch, ridge_axis = spec['overhang'], spec['pitch'], spec['ridge_axis']
+    overhang, pitch, ridge_axis = spec['overhang'], spec['pitch'], spec.get('ridge_axis', 'x')
+    roof_kind = spec.get('roof', 'gable')
 
     # Windows/doors sit against the wall's actual OUTER face, not the
     # centreline — using depth/2 put their frames inside the wall volume,
@@ -425,13 +664,20 @@ def build(spec):
         'slab': b.get_material('MAT_DoorSlab', (0.30, 0.14, 0.11), roughness=0.5),
         'dglass': b.get_material('MAT_DoorGlass', (0.55, 0.65, 0.68), roughness=0.05, alpha=0.35),
         'hardware': b.get_material('MAT_DoorHardware', (0.72, 0.64, 0.42), roughness=0.35, metallic=0.9),
+        'gutter': b.get_material('MAT_Gutter', (0.92, 0.92, 0.90), roughness=0.45, metallic=0.2),
+        'garage': b.get_material('MAT_GarageDoor', (0.92, 0.92, 0.90), roughness=0.5),
+        'concrete': b.get_material('MAT_Concrete', (0.72, 0.71, 0.68), roughness=0.92),
+        # Fixed, not driven by the UI: brick for chimneys, and the dark
+        # reveal behind garage-door panel gaps.
+        'chimney': b.get_material('MAT_Chimney', (0.42, 0.22, 0.17), roughness=0.9),
+        'recess': b.get_material('MAT_Recess', (0.06, 0.06, 0.06), roughness=0.9),
     }
 
     body = []
-    add_box_node(b, 'Body_Front', mats['siding'], (width, wall_h, WALL_T), (0, wall_h / 2, depth / 2), parent_children=body)
-    add_box_node(b, 'Body_Back', mats['siding'], (width, wall_h, WALL_T), (0, wall_h / 2, -depth / 2), parent_children=body)
-    add_box_node(b, 'Body_Left', mats['siding'], (WALL_T, wall_h, depth), (-width / 2, wall_h / 2, 0), parent_children=body)
-    add_box_node(b, 'Body_Right', mats['siding'], (WALL_T, wall_h, depth), (width / 2, wall_h / 2, 0), parent_children=body)
+    add_world_box(b, 'Body_Front', mats['siding'], (width, wall_h, WALL_T), (0, wall_h / 2, depth / 2), parent_children=body)
+    add_world_box(b, 'Body_Back', mats['siding'], (width, wall_h, WALL_T), (0, wall_h / 2, -depth / 2), parent_children=body)
+    add_world_box(b, 'Body_Left', mats['siding'], (WALL_T, wall_h, depth), (-width / 2, wall_h / 2, 0), parent_children=body)
+    add_world_box(b, 'Body_Right', mats['siding'], (WALL_T, wall_h, depth), (width / 2, wall_h / 2, 0), parent_children=body)
     body_grp = add_empty_node(b, 'Body', children=body)
 
     # Top face sits 4cm ABOVE y=0 so it interpenetrates the wall/door bottoms
@@ -441,15 +687,35 @@ def build(spec):
                  (0, -0.23, 0), parent_children=found)
     found_grp = add_empty_node(b, 'Foundation_Group', children=found)
 
-    roof = []
-    ridge_span = width if ridge_axis == 'x' else depth
-    run_span = depth if ridge_axis == 'x' else width
-    ridge_y, half_run, tv, extent = add_gable_roof(
-        b, mats, roof, 'Roof', ridge_axis, ridge_span, run_span, wall_h, pitch, overhang)
+    roof, trim, gutters = [], [], []
+    garage_side = spec['garage']['side'] if spec.get('garage') else None
+    if roof_kind == 'hip':
+        ridge_y, hz, tv, hx = add_hip_roof(b, mats, roof, 'Roof', width, depth, wall_h, pitch, overhang)
+        add_hip_fascia(b, mats, trim, 'Trim', wall_h, hx, hz, tv)
+        corners = [x for x, s in ((-width / 2 + 0.25, 'left'), (width / 2 - 0.25, 'right')) if s != garage_side]
+        for zs, tag in ((1, 'F'), (-1, 'B')):
+            add_gutter_run(b, mats, gutters, f'Gutter_{tag}', 'x', 2 * hx + 0.26, wall_h, zs * (hz + 0.215),
+                           faces['front'], corners)
+        for xs, tag in ((1, 'R'), (-1, 'L')):
+            add_gutter_run(b, mats, gutters, f'Gutter_{tag}', 'z', 2 * hz + 0.26, wall_h, xs * (hx + 0.215),
+                           faces['side'], [])
+    else:
+        ridge_span = width if ridge_axis == 'x' else depth
+        run_span = depth if ridge_axis == 'x' else width
+        ridge_y, half_run, tv, extent = add_gable_roof(
+            b, mats, roof, 'Roof', ridge_axis, ridge_span, run_span, wall_h, pitch, overhang)
+        add_eave_fascia(b, mats, trim, 'Trim', ridge_axis, wall_h, half_run, tv, extent)
+        if ridge_axis == 'x':
+            corners = [x for x, s in ((-width / 2 + 0.25, 'left'), (width / 2 - 0.25, 'right')) if s != garage_side]
+            for zs, tag in ((1, 'F'), (-1, 'B')):
+                add_gutter_run(b, mats, gutters, f'Gutter_{tag}', 'x', extent, wall_h, zs * (half_run + 0.215),
+                               faces['front'], corners)
+        else:
+            for xs, tag in ((1, 'R'), (-1, 'L')):
+                add_gutter_run(b, mats, gutters, f'Gutter_{tag}', 'z', extent, wall_h, xs * (half_run + 0.215),
+                               faces['side'], [-depth / 2 + 0.25])
     roof_grp = add_empty_node(b, 'Roof', children=roof)
 
-    trim = []
-    add_eave_fascia(b, mats, trim, 'Trim', ridge_axis, wall_h, half_run, tv, extent)
     for cx in (-width / 2, width / 2):
         for cz in (-depth / 2, depth / 2):
             tag = ('L' if cx < 0 else 'R') + ('B' if cz < 0 else 'F')
@@ -458,7 +724,6 @@ def build(spec):
     if spec.get('belt_y'):
         add_box_node(b, 'Trim_BeltCourse', mats['trim'], (width + 0.26, 0.22, depth + 0.26),
                      (0, spec['belt_y'], 0), parent_children=trim)
-    trim_grp = add_empty_node(b, 'Trim', children=trim)
 
     windows = []
     counters = {}
@@ -466,7 +731,30 @@ def build(spec):
         counters[side] = counters.get(side, 0) + 1
         name = f'Window_{side.capitalize()}_{counters[side]:02d}'
         windows.append(add_window(b, mats, name, side, coord, sill, w, h, faces))
+        if w > 0.5:  # no sill on a narrow sidelight
+            add_window_trim(b, mats, trim, name, side, coord, sill, w, h, faces)
+        if spec.get('shutters') and side == 'front' and w > 0.5 and h > 1.0:
+            for s in (1, -1):
+                add_box_node(b, f'{name}_Shutter_{"R" if s > 0 else "L"}', mats['slab'],
+                             (w * 0.45, h + 0.1, 0.05), (coord + s * (w / 2 + w * 0.225 + 0.12), sill + h / 2,
+                                                         faces['front'] + 0.05), parent_children=trim)
+
+    # Dormers on the front slope (side-gable roofs only).
+    extras = []
+    dormer_windows = []
+    if spec.get('dormers'):
+        t = math.tan(math.radians(pitch))
+        for i, dx in enumerate(spec['dormers']['x'], start=1):
+            dsp = spec['dormers']
+            extras.append(add_dormer(b, mats, f'Dormer_{i:02d}', dx, dsp['z_front'], lambda z: ridge_y - z * t,
+                                     dsp['w'], dsp['h'], dsp['depth'], dsp['pitch'], dormer_windows))
+        for i, (dx, sill, w, h, zf) in enumerate(dormer_windows, start=1):
+            windows.append(add_window(b, mats, f'Window_Dormer_{i:02d}', 'front', dx, sill, w, h,
+                                      {'front': zf - WALL_T / 2 + 0.0, 'side': 0}))
+
+    trim_grp = add_empty_node(b, 'Trim', children=trim)
     windows_grp = add_empty_node(b, 'Windows', children=windows)
+    gutters_grp = add_empty_node(b, 'Gutters', children=gutters)
 
     d = spec['door']
     dx, dw, dh = d['x'], d['w'], d['h']
@@ -485,14 +773,39 @@ def build(spec):
     door_grp = add_empty_node(b, 'Door_Front', children=doors)
     doors_grp = add_empty_node(b, 'Doors', children=[door_grp])
 
-    extras = []
     if spec.get('porch'):
         add_porch(b, mats, extras, spec, faces)
-    extras_grp = add_empty_node(b, 'Porch', children=extras) if extras else None
+        p = spec['porch']
+        z_out = faces['front'] - 0.1 + p['depth'] + 0.3
+        add_gutter_run(b, mats, extras, 'Porch_Gutter', 'x', width + 0.7, p['roof_y'] + 0.02, z_out + 0.14,
+                       z_out - 0.05, [-width / 2, width / 2])
+    else:
+        # A poured stoop at the front door: concrete, so it follows the
+        # Concrete choice along with the driveway and walk.
+        add_box_node(b, 'Stoop', mats['concrete'], (dw + 1.1, 0.14, 1.2), (dx, -0.01, faces['front'] + 0.6),
+                     parent_children=extras)
+
+    if spec.get('chimney'):
+        c = spec['chimney']
+        if c.get('exterior'):
+            base, top = -0.2, ridge_y + c.get('above', 0.6)
+        else:
+            t = math.tan(math.radians(pitch))
+            run = abs(c['x']) if ridge_axis == 'z' else abs(c['z'])
+            base, top = wall_h - 0.3, ridge_y - run * t + c.get('above', 0.9)
+        add_box_node(b, 'Chimney', mats['chimney'], (c['w'], top - base, c['d']),
+                     (c['x'], (top + base) / 2, c['z']), parent_children=extras)
+        add_box_node(b, 'Chimney_Cap', mats['foundation'], (c['w'] + 0.12, 0.1, c['d'] + 0.12),
+                     (c['x'], top + 0.05, c['z']), parent_children=extras)
+
+    if spec.get('garage'):
+        extras.append(add_garage(b, mats, spec, faces))
+
+    extras_grp = add_empty_node(b, 'Extras', children=extras) if extras else None
 
     anchor = add_empty_node(b, 'Ground_Anchor', position=(0, 0, 0))
 
-    root_children = [body_grp, found_grp, roof_grp, trim_grp, windows_grp, doors_grp]
+    root_children = [body_grp, found_grp, roof_grp, trim_grp, windows_grp, gutters_grp, doors_grp]
     if extras_grp is not None:
         root_children.append(extras_grp)
     root_children.append(anchor)
@@ -510,17 +823,22 @@ def build(spec):
     )
     gltf.buffers = [Buffer(byteLength=len(b.blob))]
     gltf.set_binary_blob(bytes(b.blob))
-    return gltf, ridge_y
+    tris = sum(b.accessors[m.primitives[0].indices].count for m in b.meshes) // 3
+    return gltf, ridge_y, tris
 
 
 # ---------------------------------------------------------------------------
-# The three demo homes. Window tuples are (side, coord, sill_y, width, height).
+# The demo homes. Window tuples are (side, coord, sill_y, width, height).
 # ---------------------------------------------------------------------------
 
 RANCH = {
     'id': 'ranch',
     'width': 11.5, 'depth': 7.0, 'wall_h': 2.8,
-    'pitch': 22, 'overhang': 0.4, 'ridge_axis': 'x',
+    # A hip roof: the most common ranch roof in central Indiana, and the
+    # shape the roofing page's guide shows next to the gables.
+    'pitch': 22, 'overhang': 0.45, 'ridge_axis': 'x', 'roof': 'hip',
+    'garage': {'side': 'right', 'w': 4.6, 'd': 6.6, 'wall_h': 2.7, 'pitch': 22,
+               'door_w': 2.9, 'door_h': 2.15, 'front_offset': 0.8},
     'door': {'x': 3.0, 'w': 1.0, 'h': 2.05},
     'windows': [
         ('front', -4.3, 1.0, 1.15, 1.25),
@@ -542,6 +860,8 @@ COLONIAL = {
     'width': 9.6, 'depth': 8.0, 'wall_h': 5.6,
     'pitch': 34, 'overhang': 0.35, 'ridge_axis': 'x',
     'belt_y': 2.86,
+    'shutters': True,
+    'chimney': {'exterior': True, 'x': -(9.6 / 2 + 0.1 + 0.4), 'z': -0.4, 'w': 0.8, 'd': 1.2, 'above': 0.7},
     'door': {'x': 0.0, 'w': 1.05, 'h': 2.10},
     'windows': [
         # ground floor — symmetric about the centred entry, with sidelights
@@ -585,6 +905,7 @@ CRAFTSMAN = {
     'door': {'x': 1.2, 'w': 1.05, 'h': 2.10},
     'porch': {'depth': 2.4, 'roof_y': 2.75, 'roof_pitch': 12,
               'columns': [-4.4, -1.6, 1.6, 4.4]},
+    'chimney': {'x': -2.7, 'z': -2.0, 'w': 0.8, 'd': 0.8, 'above': 0.9},
     'windows': [
         ('front', -2.2, 0.75, 2.60, 1.55),
         ('front', 3.7, 0.85, 1.20, 1.35),
@@ -600,16 +921,73 @@ CRAFTSMAN = {
     ],
 }
 
-HOUSES = [RANCH, COLONIAL, CRAFTSMAN]
+CAPE_COD = {
+    'id': 'capecod',
+    'width': 10.4, 'depth': 8.0, 'wall_h': 2.9,
+    # Steep side gable with two front dormers: a story and a half.
+    'pitch': 45, 'overhang': 0.3, 'ridge_axis': 'x',
+    'shutters': True,
+    'door': {'x': 0.0, 'w': 1.0, 'h': 2.05},
+    'dormers': {'x': [-2.6, 2.6], 'z_front': 3.3, 'w': 1.7, 'h': 1.6, 'depth': 2.4, 'pitch': 40},
+    'chimney': {'exterior': True, 'x': 10.4 / 2 + 0.1 + 0.4, 'z': 0.0, 'w': 0.8, 'd': 1.2, 'above': 0.6},
+    'windows': [
+        ('front', -2.6, 0.95, 1.15, 1.35),
+        ('front', 2.6, 0.95, 1.15, 1.35),
+        ('front', -4.2, 0.95, 0.9, 1.35),
+        ('front', 4.2, 0.95, 0.9, 1.35),
+        ('back', -2.8, 1.0, 1.2, 1.3),
+        ('back', 0.4, 1.0, 1.6, 1.3),
+        ('back', 3.2, 1.0, 1.2, 1.3),
+        ('left', -1.8, 1.0, 1.0, 1.2),
+        ('left', 1.8, 1.0, 1.0, 1.2),
+        ('left', 0.0, 4.0, 0.9, 1.0),
+        ('right', -2.2, 1.0, 1.0, 1.2),
+        ('right', 2.2, 1.0, 1.0, 1.2),
+    ],
+}
+
+FARMHOUSE = {
+    'id': 'farmhouse',
+    'width': 10.8, 'depth': 8.0, 'wall_h': 5.5,
+    # Two storeys under a steep gable, a full-width porch, and a garage
+    # wing: the shape that suits board-and-batten and a metal roof.
+    'pitch': 40, 'overhang': 0.3, 'ridge_axis': 'x',
+    'door': {'x': 0.0, 'w': 1.05, 'h': 2.15},
+    'porch': {'depth': 2.2, 'roof_y': 2.85, 'roof_pitch': 10,
+              'columns': [-4.9, -1.7, 1.7, 4.9]},
+    'garage': {'side': 'left', 'w': 4.6, 'd': 6.6, 'wall_h': 3.0, 'pitch': 40,
+               'door_w': 2.9, 'door_h': 2.2, 'front_offset': -1.4},
+    'windows': [
+        ('front', -3.7, 0.65, 1.05, 1.75),
+        ('front', -2.25, 0.65, 1.05, 1.75),
+        ('front', 2.25, 0.65, 1.05, 1.75),
+        ('front', 3.7, 0.65, 1.05, 1.75),
+        ('front', -3.0, 3.45, 1.0, 1.45),
+        ('front', 0.0, 3.45, 1.0, 1.45),
+        ('front', 3.0, 3.45, 1.0, 1.45),
+        ('back', -3.0, 0.9, 1.2, 1.4),
+        ('back', 0.5, 0.9, 1.8, 1.4),
+        ('back', 3.2, 0.9, 1.2, 1.4),
+        ('back', -2.4, 3.45, 1.0, 1.4),
+        ('back', 2.4, 3.45, 1.0, 1.4),
+        ('right', -2.0, 0.9, 1.0, 1.4),
+        ('right', 1.8, 0.9, 1.0, 1.4),
+        ('right', -2.0, 3.45, 1.0, 1.4),
+        ('right', 1.8, 3.45, 1.0, 1.4),
+        ('left', 0.0, 3.45, 1.0, 1.4),
+    ],
+}
+
+HOUSES = [RANCH, COLONIAL, CRAFTSMAN, CAPE_COD, FARMHOUSE]
 
 
 if __name__ == '__main__':
     import os
     here = os.path.dirname(os.path.abspath(__file__))
     for spec in HOUSES:
-        gltf, ridge_y = build(spec)
+        gltf, ridge_y, tris = build(spec)
         out = os.path.join(here, f"house-{spec['id']}.glb")
         gltf.save_binary(out)
         size = os.path.getsize(out)
         print(f"wrote {os.path.basename(out)}  "
-              f"{spec['width']}x{spec['depth']}m  ridge {ridge_y:.2f}m  {size/1024:.1f} KB")
+              f"{spec['width']}x{spec['depth']}m  ridge {ridge_y:.2f}m  {tris} triangles  {size/1024:.1f} KB")

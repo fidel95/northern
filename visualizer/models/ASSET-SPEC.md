@@ -78,6 +78,10 @@ House_Root                 (empty, at origin)
 │       ├── *_Slab           mesh, MAT_DoorSlab
 │       ├── *_Glass          mesh, MAT_DoorGlass (lites/sidelights, if any)
 │       └── *_Hardware       mesh, MAT_DoorHardware (handle, hinges, kickplate)
+├── Gutters                 (empty) — MAT_Gutter
+├── Garage                  (empty, optional)
+│   └── Garage_Door         (empty) — panels MAT_GarageDoor; the app runs the
+│                             driveway out from this node's bounds
 └── Ground_Anchor           (empty, no mesh, at 0,0,0)
 ```
 
@@ -100,9 +104,12 @@ elevation" behavior customers already know from the current 2D tool.
 | `MAT_DoorSlab`       | Entry/patio door panel face                     | Yes — door color |
 | `MAT_DoorGlass`      | Door lites/sidelights glazing                   | Yes — glass type |
 | `MAT_DoorHardware`   | Handle, hinges, kickplate                       | Yes — hardware finish |
+| `MAT_Gutter`         | Gutters, downspouts, elbows and kick-outs       | Yes — gutter color |
+| `MAT_GarageDoor`     | Garage door panels                              | Yes — garage door color/wood look |
+| `MAT_Concrete`       | Stoops and porch steps (the app paints the driveway and walk to match) | Yes — concrete finish/color |
 | `MAT_Foundation`     | Foundation wall / skirting                      | No — fixed, your material renders as-authored |
 
-Anything not in this table (roof flashing, gutters, a chimney, decorative
+Anything not in this table (roof flashing, a chimney, decorative
 brackets) is fine to include — give it its own sensibly-named material and
 it will simply render with whatever PBR values you author, untouched by
 the app, until a future phase wires it up.
@@ -123,11 +130,13 @@ becomes its own optional set of `Frame`/`Glass` meshes swapped in by name
 
 ## 6. UVs
 
-- One non-overlapping UV set (**UV0**) per material island. Siding, roof,
-  and trim should be **real-world-scale UVs** — i.e. a 1×1 m texture tile
-  should map to 1×1 m of surface, consistently across the whole model, so
-  a tiling texture (lap siding, shingle courses) doesn't stretch or swim
-  when swapped at runtime.
+- One non-overlapping UV set (**UV0**) per material island. Siding and
+  roof must be **real-world-scale UVs in metres** — a 1×1 m texture tile
+  maps to 1×1 m of surface (the app sizes every tiling texture in metres:
+  lap courses at 178 mm, shingle courses at 143 mm). On roofs, U runs along
+  the eave and V down the slope; on walls, U runs across and V down. Keep
+  it consistent across the whole model, so a tiling texture (lap siding,
+  shingle courses) doesn't stretch or swim when swapped at runtime.
 - Reserve a second UV channel (**UV1**) for a future baked
   lightmap/AO pass. Not required for v1; nice to have.
 

@@ -110,12 +110,52 @@ export function createCameraRig(canvas) {
     controls.update();
   }
 
+  // A one-time glide in on the first house: from a little wider and further
+  // round, easing into the framed view over 1.5 s. Skipped with reduced
+  // motion, and abandoned the moment the visitor grabs the view.
+  let glided = false;
+  let glideFrame = 0;
+  function cancelGlide() { if (glideFrame) cancelAnimationFrame(glideFrame); glideFrame = 0; }
+  canvas.addEventListener('pointerdown', cancelGlide);
+  canvas.addEventListener('wheel', cancelGlide, { passive: true });
+
+  function glideIn() {
+    const end = defaultPos.clone();
+    const offset = end.clone().sub(defaultTarget);
+    const start = defaultTarget.clone().add(
+      offset.clone().applyAxisAngle(WORLD_UP, 0.45).multiplyScalar(1.3).add(new THREE.Vector3(0, offset.length() * 0.08, 0)),
+    );
+    const t0 = performance.now();
+    const step = (now) => {
+      const t = Math.min(1, (now - t0) / 1500);
+      const e = 1 - (1 - t) ** 3; // ease-out cubic
+      // Swing round the target rather than cutting across it, so the house
+      // stays centred the whole way.
+      const from = start.clone().sub(defaultTarget);
+      const to = end.clone().sub(defaultTarget);
+      const angle = Math.atan2(from.x, from.z) * (1 - e) + Math.atan2(to.x, to.z) * e;
+      const radius = from.length() * (1 - e) + to.length() * e;
+      const height = from.y * (1 - e) + to.y * e;
+      const flat = Math.sqrt(Math.max(0, radius * radius - height * height));
+      camera.position.set(defaultTarget.x + Math.sin(angle) * flat, defaultTarget.y + height, defaultTarget.z + Math.cos(angle) * flat);
+      controls.update();
+      glideFrame = t < 1 ? requestAnimationFrame(step) : 0;
+    };
+    camera.position.copy(start);
+    controls.update();
+    glideFrame = requestAnimationFrame(step);
+  }
+
   function frameHouse(box) {
     houseBox = box.clone();
+    cancelGlide();
     applyFraming();
+    if (!glided && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) glideIn();
+    glided = true;
   }
 
   function resetView() {
+    cancelGlide();
     // Recomputed rather than replayed, so Reset View still frames correctly
     // after the aspect ratio has changed underneath it — entering Presentation
     // Mode is exactly that, and a stored position would come back cropped.

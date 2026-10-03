@@ -330,3 +330,34 @@ body.viz-present .viz3d-hud { bottom: 82px; }
 .viz-explain-cell h3 { font-family: var(--font-sans); font-size: 20px; line-height: 28px; font-weight: 600; color: var(--ink); }
 .viz-explain-cell p { color: var(--ink-muted); font-size: 16px; line-height: 24px; text-wrap: pretty; }
 .viz-explain-cell p a { color: var(--lichen-text); }
+
+/* Photo mode: what the next four taps trace. */
+.viz-photozones { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); margin: var(--space-3) 0 var(--space-2); }
+@media (max-width: 480px) { .viz-photozones { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Time-of-day light presets, over the bottom-left of the 3D view. */
+.viz-light {
+  position: absolute; left: 12px; bottom: 12px; z-index: 15;
+  display: flex; gap: 2px; padding: 3px;
+  background: color-mix(in srgb, var(--surface-000) 82%, transparent);
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+}
+.viz-light__btn {
+  min-height: 38px; padding: 0 12px; border: 1px solid transparent; border-radius: var(--radius-sm);
+  background: transparent; color: var(--ink-muted); cursor: pointer;
+  font-family: var(--font-sans); font-size: 14px; font-weight: 600;
+  transition: background-color 160ms ease-out, color 160ms ease-out;
+}
+.viz-light__btn:hover { color: var(--ink); }
+.viz-light__btn[aria-pressed="true"] { background: var(--surface-300); color: var(--ink); border-color: var(--line-strong); }
+.viz-light__btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+body.viz-present .viz-light { display: none; }
+@media (max-width: 560px) { .viz-light__btn { padding: 0 9px; font-size: 13px; } }
+/* On narrow screens the fixed Customize bar covers the bottom of the view
+   (see the 900px block above), so the light picker moves up beside the HUD. */
+@media (max-width: 900px) { .viz-light { top: 12px; bottom: auto; } }
+.viz-light__short { display: none; }
+@media (max-width: 560px) {
+  .viz-light__long { display: none; }
+  .viz-light__short { display: inline; }
+}

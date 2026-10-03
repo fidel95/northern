@@ -4,7 +4,8 @@
 // with it or costing much of the frame/texture budget.
 
 import * as THREE from 'three';
-import { getGrassTexture, getConcreteTexture, applyRepeat } from './textures.js';
+import { getGrassTexture, getConcreteFinish, applyRepeat } from './textures.js';
+import { MAT } from './config.js';
 import { MATTE_ENV_INTENSITY } from './materials.js';
 
 function cloneWithRepeat(tex, repeat) {
@@ -46,13 +47,21 @@ let shrubs = [];
 // footprint. Without this the driveway sits half under an 11.5m-wide ranch
 // and floats in the lawn beside a 9.6m colonial, and the contact shadow is
 // the wrong size for both.
-export function setHouseFootprint({ width, depth, doorX, minX, maxX, maxZ }) {
+export function setHouseFootprint({ width, depth, doorX, minX, maxX, maxZ, garage }) {
   if (contactShadow) {
     contactShadow.scale.set((width + 3.2) / 13, (depth + 3.4) / 11, 1);
   }
   if (driveway) {
-    // Just clear of the right-hand wall, running out toward the street.
-    driveway.position.set(maxX + 2.6, 0.012, maxZ + 3.4);
+    if (garage) {
+      // Straight out from the garage door to the street, a little wider
+      // than the door.
+      driveway.scale.set((garage.width + 1.4) / 3.4, 1, 1);
+      driveway.position.set(garage.x, 0.012, garage.z + 5.5);
+    } else {
+      // No garage: just clear of the right-hand wall, out toward the street.
+      driveway.scale.set(1, 1, 1);
+      driveway.position.set(maxX + 2.6, 0.012, maxZ + 3.4);
+    }
   }
   if (walkway) {
     // Straight out from the front door. The whole point of taking doorX from
@@ -86,26 +95,16 @@ export function buildEnvironment() {
   ground.receiveShadow = true;
   group.add(ground);
 
-  const concrete = getConcreteTexture();
-  const driveMat = new THREE.MeshStandardMaterial({
-    map: cloneWithRepeat(concrete.map, { x: 2, y: 5 }),
-    normalMap: cloneWithRepeat(concrete.normalMap, { x: 2, y: 5 }),
-    roughness: 0.92,
-    envMapIntensity: MATTE_ENV_INTENSITY,
-  });
-  driveway = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 11), driveMat);
+  // Driveway and walk carry the MAT_Concrete name, so a tap on either opens
+  // the Concrete panel (main.js raycasts them alongside the house), and
+  // setConcrete() below repaints both with the current choice.
+  driveway = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 11), new THREE.MeshStandardMaterial({ name: MAT.CONCRETE }));
   driveway.rotation.x = -Math.PI / 2;
   driveway.position.set(5.2, 0.012, 8.5);
   driveway.receiveShadow = true;
   group.add(driveway);
 
-  const walkMat = new THREE.MeshStandardMaterial({
-    map: cloneWithRepeat(concrete.map, { x: 1, y: 4 }),
-    normalMap: cloneWithRepeat(concrete.normalMap, { x: 1, y: 4 }),
-    roughness: 0.92,
-    envMapIntensity: MATTE_ENV_INTENSITY,
-  });
-  walkway = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 5.2), walkMat);
+  walkway = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 5.2), new THREE.MeshStandardMaterial({ name: MAT.CONCRETE }));
   walkway.rotation.x = -Math.PI / 2;
   walkway.position.set(1.15, 0.013, 6.4);
   walkway.receiveShadow = true;
@@ -133,5 +132,41 @@ export function buildEnvironment() {
     group.add(s);
   });
 
+  setConcrete('broom', '#B9B6AD');
   return group;
+}
+
+/** The pickable hardscape meshes, for tap-to-select. */
+export function hardscapeMeshes() {
+  return [driveway, walkway].filter(Boolean);
+}
+
+function concreteMaterial(tex, repeat) {
+  return new THREE.MeshStandardMaterial({
+    name: MAT.CONCRETE,
+    map: cloneWithRepeat(tex.map, repeat),
+    normalMap: cloneWithRepeat(tex.normalMap, repeat),
+    roughnessMap: cloneWithRepeat(tex.roughnessMap, repeat),
+    roughness: 1,
+    envMapIntensity: MATTE_ENV_INTENSITY,
+  });
+}
+
+function disposeConcrete(mesh) {
+  const m = mesh.material;
+  if (!m) return;
+  // The clones share their image with textures.js's cache, so disposing the
+  // clone frees only its own GPU upload, never the cached original.
+  ['map', 'normalMap', 'roughnessMap'].forEach((k) => m[k] && m[k].dispose());
+  m.dispose();
+}
+
+/** Repaints the driveway and walk in a concrete finish and colour. */
+export function setConcrete(finish, colorHex) {
+  const tex = getConcreteFinish(finish, colorHex);
+  [[driveway, { x: 2, y: 5 }], [walkway, { x: 1, y: 4 }]].forEach(([mesh, repeat]) => {
+    if (!mesh) return;
+    disposeConcrete(mesh);
+    mesh.material = concreteMaterial(tex, repeat);
+  });
 }

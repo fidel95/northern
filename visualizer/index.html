@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Home Visualizer — See New Windows on Your House | Northern Pines Construction Services</title>
-<meta name="description" content="Try window styles, frame colors, grilles, glass and siding on one of three demo homes — or upload a photo of your own house and trace your openings.">
+<title>Home Visualizer — Try a New Roof, Siding, Windows &amp; More | Northern Pines Construction Services</title>
+<meta name="description" content="Try roofing, siding and trim, windows, doors, gutters and concrete on five 3D demo homes, or on a photo of your own house, then send the whole look to us for a free estimate.">
 <link rel="canonical" href="https://npconstructionservices.com/visualizer/">
 <meta property="og:title" content="Home Visualizer | Northern Pines Construction Services">
-<meta property="og:description" content="Configure windows and doors on a demo home or your own photo, then send the configuration into an instant estimate.">
+<meta property="og:description" content="Try a new roof, siding, windows, doors, gutters and concrete on a 3D home or a photo of your own, then send the whole look for a free estimate.">
 <meta property="og:image" content="https://npconstructionservices.com/design-system/images/npcs-banner-share-1200x630.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -149,7 +149,7 @@
   <div class="page-hero__inner">
     <p class="np-eyebrow">Tool 01 &middot; Home Visualizer</p>
     <h1>See it on the house<br>before you <em>commit</em>.</h1>
-    <p class="lede">Pick a home close to yours, tap a part of it, and change it. Everything you can configure here is something we actually build &mdash; and it follows you into the estimate.</p>
+    <p class="lede">Pick a home close to yours, tap any part of it and change it: the roof, siding and trim, windows, doors, gutters, even the driveway. When it looks right, send the whole thing to us.</p>
   </div>
 </section>
 
@@ -176,7 +176,7 @@
         </div>
 
         <button type="button" class="viz-compare-toggle" data-viz3d-comparetoggle aria-pressed="false">
-          <span aria-hidden="true" class="viz-compare-toggle__icon">&#x25D0;</span> Compare Before / After
+          <span aria-hidden="true" class="viz-compare-toggle__icon">&#x25D0;</span> Compare before / after
         </button>
       </div>
 
@@ -206,25 +206,37 @@
           <p class="viz3d-fallback__note">You can still browse styles and get pricing in the <a href="/estimate/">estimate tool</a> without the 3D preview.</p>
         </div>
 
+        <div class="viz-light" role="group" aria-label="Time of day" data-viz3d-light>
+          <button type="button" class="viz-light__btn" data-light="morning" aria-pressed="false" aria-label="Morning light"><span class="viz-light__long">Morning</span><span class="viz-light__short" aria-hidden="true">AM</span></button>
+          <button type="button" class="viz-light__btn" data-light="midday" aria-pressed="true" aria-label="Midday light"><span class="viz-light__long">Midday</span><span class="viz-light__short" aria-hidden="true">Noon</span></button>
+          <button type="button" class="viz-light__btn" data-light="evening" aria-pressed="false" aria-label="Evening light"><span class="viz-light__long">Evening</span><span class="viz-light__short" aria-hidden="true">PM</span></button>
+        </div>
         <div class="viz3d-hud" data-viz3d-hud hidden>
           <button type="button" class="viz3d-hud-btn" data-viz3d-reset>Reset view</button>
         </div>
 
-        <button type="button" class="viz-present-exit" data-viz3d-presentexit hidden>&larr; Exit Presentation Mode</button>
+        <button type="button" class="viz-present-exit" data-viz3d-presentexit hidden>&larr; Exit presentation mode</button>
       </div>
 
       <p class="viz-status" data-viz3d-status>Drag to rotate the house. Scroll or pinch to zoom.</p>
 
       <div class="viz-actions">
         <button type="button" class="viz-btn-outline" data-viz3d-resetconfig>Reset design</button>
-        <button type="button" class="viz-btn-outline" data-viz3d-snapshot>Take Snapshot</button>
-        <button type="button" class="viz-btn-outline" data-viz3d-presenttoggle>Presentation Mode</button>
-        <a href="/estimate/?tab=windows&amp;style=doublehung" class="viz-btn-solid" data-viz3d-estimatelink>See This Configuration's Price &rarr;</a>
+        <button type="button" class="viz-btn-outline" data-viz3d-snapshot>Take snapshot</button>
+        <button type="button" class="viz-btn-outline" data-viz3d-presenttoggle>Presentation mode</button>
+        <a href="/estimate/?tab=windows&amp;style=doublehung" class="viz-btn-solid" data-viz3d-estimatelink>Price windows &amp; doors &rarr;</a>
       </div>
 
       <div class="viz-upload-panel" data-viz3d-uploadpanel>
         <h2>Your own photo</h2>
-        <p>Upload a straight-on shot of the elevation you want to change. Pick a zone on the right &mdash; Windows, Siding, Roofing, or Trim &mdash; then tap its four corners: top-left, top-right, bottom-right, bottom-left. Windows get fit with the selected style; siding, roofing, and trim get recolored in place.</p>
+        <p>Upload a straight-on shot of the side of the house you want to change. Pick what you&rsquo;re tracing below, then tap its four corners: top-left, top-right, bottom-right, bottom-left. Windows get fit with the selected style; siding, roofing and trim get recolored in place.</p>
+        <div class="viz-photozones" role="group" aria-label="What you're tracing" data-viz3d-photozones>
+          <button type="button" class="viz-zone-btn" data-photozone="windows" aria-pressed="true">Windows</button>
+          <button type="button" class="viz-zone-btn" data-photozone="siding" aria-pressed="false">Siding</button>
+          <button type="button" class="viz-zone-btn" data-photozone="roofing" aria-pressed="false">Roofing</button>
+          <button type="button" class="viz-zone-btn" data-photozone="trim" aria-pressed="false">Trim</button>
+        </div>
+        <p class="viz-upload-note">Doors, gutters and concrete can be tried on the 3D homes; on a photo they&rsquo;re not traceable yet.</p>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button type="button" class="viz-upload-btn" data-viz3d-pickfile>Choose a photo</button>
           <button type="button" class="viz-btn-outline" data-viz3d-undo>Undo last opening</button>
@@ -258,10 +270,10 @@
   <div class="section__inner">
     <h2 class="section-title">What the visualizer is, and isn't.</h2>
     <div class="viz-explain-grid">
-      <div class="viz-explain-cell"><span class="num">01</span><h3>It matches the catalog</h3><p>Every style, frame color, grille, and glass package here is one we manufacture, and every one is included in all three window tiers &mdash; not charged as an extra. Your choices carry into the <a href="/estimate/">estimate tool</a> with you. Nothing shown is aspirational.</p></div>
-      <div class="viz-explain-cell"><span class="num">02</span><h3>It's a real 3D scene</h3><p>All three demo homes are real, lit 3D models you can rotate and zoom &mdash; not illustrations. Pick the massing closest to yours: a single-story ranch, a two-story colonial, or a craftsman with a full-width porch. It runs entirely in your browser.</p></div>
-      <div class="viz-explain-cell"><span class="num">03</span><h3>Your photo needs four taps</h3><p>Openings on an uploaded photo are traced by hand, corner by corner. The fit is perspective-correct once you've marked the four corners.</p></div>
-      <div class="viz-explain-cell"><span class="num">04</span><h3>A designer still measures</h3><p>Nothing here replaces the measure visit. It replaces the part where you try to imagine it from a brochure.</p></div>
+      <div class="viz-explain-cell"><span class="num">01</span><h3>The whole outside of the house</h3><p>Roofing, siding and trim, windows, doors, gutters and concrete: the six things we do, on one house, so you can see how they work together. Windows and doors carry straight into the <a href="/estimate/">instant estimate</a>.</p></div>
+      <div class="viz-explain-cell"><span class="num">02</span><h3>Five real 3D homes</h3><p>A hip-roof ranch with a garage, a two-story colonial, a craftsman with a porch, a Cape Cod with dormers and a farmhouse. Rotate and zoom; pick the one closest to yours.</p></div>
+      <div class="viz-explain-cell"><span class="num">03</span><h3>Or use a photo of yours</h3><p>On a photo, tap four corners to fit a window or recolor the siding, roof or trim. The photo never leaves your phone or computer.</p></div>
+      <div class="viz-explain-cell"><span class="num">04</span><h3>Colors on a screen are a guide</h3><p>Nothing here replaces seeing real samples in daylight on your own house. It replaces trying to imagine it from a brochure.</p></div>
     </div>
   </div>
 </section>
@@ -270,8 +282,8 @@
   <div class="cta-split__inner">
     <div>
       <h2>Send us what you built.</h2>
-      <p>Your current configuration is written into the message below, and travels with you into the estimate. A designer will bring physical samples of exactly these choices to the consultation.</p>
-      <a href="/estimate/?tab=windows&amp;style=doublehung" class="np-btn np-btn--primary np-btn--lg" data-viz3d-estimatelink>Price this configuration &rarr;</a>
+      <p>Everything you chose is already written into the message below, and every service you changed is ticked. Windows and doors can be priced instantly; for the roof, siding, gutters and concrete we&rsquo;ll quote it after a free visit, and bring real samples of these choices.</p>
+      <a href="/estimate/?tab=windows&amp;style=doublehung" class="np-btn np-btn--primary np-btn--lg" data-viz3d-estimatelink>Price windows &amp; doors now &rarr;</a>
     </div>
     <form class="lead-form estimate-form" id="estimate" data-source="Home visualizer request" action="https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00Dhm00000374Vz" method="POST" aria-labelledby="estimate-form-h">
       <input type="hidden" name="captcha_settings" value="{&quot;keyname&quot;:&quot;npcsv2&quot;,&quot;fallback&quot;:&quot;true&quot;,&quot;orgId&quot;:&quot;00Dhm00000374Vz&quot;,&quot;ts&quot;:&quot;&quot;}">

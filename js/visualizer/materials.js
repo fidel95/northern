@@ -13,7 +13,9 @@
 
 import * as THREE from 'three';
 import { MAT, optionById } from './config.js';
-import { getSidingTexture, getRoofingTexture, getTrimTexture } from './textures.js';
+import {
+  getSidingTexture, getRoofingTexture, getTrimTexture, getConcreteFinish, getWoodGrain,
+} from './textures.js';
 
 // How much of the environment map a MATTE surface takes, versus the much
 // larger weights on glass and metal below.
@@ -165,6 +167,10 @@ function styleBars(styleId) {
     case 'doublehung': return [{ x0: 0, y0: 0.47, x1: 1, y1: 0.53 }];
     case 'casement': return [{ x0: 0.3, y0: 0.03, x1: 0.36, y1: 0.97 }];
     case 'slider': return [{ x0: 0.47, y0: 0.03, x1: 0.53, y1: 0.97 }];
+    // Awning: a hinged lower sash under a fixed upper light.
+    case 'awning': return [{ x0: 0, y0: 0.6, x1: 1, y1: 0.65 }];
+    // Bay & bow, read straight on: a wide centre light between two flankers.
+    case 'baybow': return [{ x0: 0.24, y0: 0.03, x1: 0.29, y1: 0.97 }, { x0: 0.71, y0: 0.03, x1: 0.76, y1: 0.97 }];
     case 'picture':
     default: return [];
   }
@@ -189,7 +195,11 @@ function grilleBars(grilleId) {
   return [];
 }
 
-function buildBarsForGlass(glassMesh, rects, barMaterial, houseCenter, group) {
+// Bars are collected as transforms and drawn as ONE instanced mesh per
+// apply(), not a mesh each: the colonial alone has 23 panes, and five bars a
+// pane as separate meshes was over a hundred extra draw calls — the kind of
+// cost that makes orbiting stutter on a phone.
+function barTransformsForGlass(glassMesh, rects, houseCenter, out) {
   const { box, size } = worldExtents(glassMesh);
   const { a, b, thin } = paneAxes(size);
   const center = box.getCenter(new THREE.Vector3());
@@ -201,12 +211,8 @@ function buildBarsForGlass(glassMesh, rects, barMaterial, houseCenter, group) {
     const w = (r.x1 - r.x0) * a.v;
     const h = (r.y1 - r.y0) * b.v;
     if (w <= 0 || h <= 0) return;
-    const geo = new THREE.BoxGeometry(1, 1, 1);
-    const mesh = new THREE.Mesh(geo, barMaterial);
-
     const dims = { x: 0, y: 0, z: 0 };
     dims[a.k] = w; dims[b.k] = h; dims[thin.k] = BAR_THICKNESS;
-    mesh.scale.set(dims.x || BAR_THICKNESS, dims.y || BAR_THICKNESS, dims.z || BAR_THICKNESS);
 
     const pos = center.clone();
     const offA = (r.x0 + r.x1) / 2 - 0.5;
@@ -214,11 +220,14 @@ function buildBarsForGlass(glassMesh, rects, barMaterial, houseCenter, group) {
     pos[a.k] += offA * a.v;
     pos[b.k] += offB * b.v;
     pos[thin.k] += outward * depthOffset;
-    mesh.position.copy(pos);
-    mesh.castShadow = false;
-    group.add(mesh);
+    out.push(new THREE.Matrix4().compose(
+      pos, new THREE.Quaternion(),
+      new THREE.Vector3(dims.x || BAR_THICKNESS, dims.y || BAR_THICKNESS, dims.z || BAR_THICKNESS),
+    ));
   });
 }
+
+const BAR_GEOMETRY = new THREE.BoxGeometry(1, 1, 1);
 
 // --- public API --------------------------------------------------------
 
@@ -262,9 +271,10 @@ export class HouseMaterialController {
   apply(selections) {
     this.created.forEach(disposeMaterial);
     this.created = [];
+    // Bars share BAR_GEOMETRY, so only the instanced mesh itself goes.
     while (this.barGroup.children.length) {
       const c = this.barGroup.children.pop();
-      c.geometry.dispose();
+      if (c.dispose) c.dispose();
       this.barGroup.remove(c);
     }
 
@@ -277,25 +287,43 @@ export class HouseMaterialController {
     const hardware = optionById('doorHardware', selections.doorHardware);
 
     const sidingTex = getSidingTexture(siding.id, siding.color, siding.pattern);
-    const roofTex = getRoofingTexture(roofing.id, roofing.color);
+    const roofType = selections.roofType === 'metal' ? 'metal' : 'shingle';
+    const roofTex = getRoofingTexture(roofing.id, roofing.color, roofType);
     const trimTex = getTrimTexture(trim.id, trim.color);
 
     this._assign(MAT.SIDING, texturedMaterial(sidingTex, { roughness: siding.roughness }));
-    this._assign(MAT.ROOFING, texturedMaterial(roofTex, { roughness: roofing.roughness }));
+    this._assign(MAT.ROOFING, texturedMaterial(roofTex, roofType === 'metal'
+      // Painted steel: some metalness and a little more sky in it than
+      // shingles, still far short of the glass.
+      ? { metalness: 0.45, envMapIntensity: 0.45 }
+      : { roughness: roofing.roughness }));
     this._assign(MAT.TRIM, texturedMaterial(trimTex, { roughness: trim.roughness }));
     this._assign(MAT.WINDOW_FRAME, flatMaterial(frame.color, frame.roughness));
     this._assign(MAT.WINDOW_GLASS, glassMaterial(glass));
     this._assign(MAT.DOOR_SLAB, flatMaterial(doorColor.color, doorColor.roughness));
     this._assign(MAT.DOOR_GLASS, glassMaterial(glass));
     this._assign(MAT.DOOR_HARDWARE, hardwareMaterial(hardware));
+    const gutter = optionById('gutter', selections.gutter);
+    this._assign(MAT.GUTTER, new THREE.MeshStandardMaterial({
+      color: new THREE.Color(gutter.color), roughness: gutter.roughness, metalness: 0.25, envMapIntensity: 0.4,
+    }));
+    const garage = optionById('garageDoor', selections.garageDoor);
+    this._assign(MAT.GARAGE_DOOR, garage.grain
+      ? new THREE.MeshStandardMaterial({ map: getWoodGrain(garage.color).map, roughness: garage.roughness, envMapIntensity: MATTE_ENV_INTENSITY })
+      : flatMaterial(garage.color, garage.roughness));
+    const finish = optionById('concrete', selections.concrete);
+    const tint = optionById('concreteColor', selections.concreteColor);
+    const conc = getConcreteFinish(finish.id, tint.color);
+    this._assign(MAT.CONCRETE, texturedMaterial(conc, { roughness: 1 }));
     // MAT_Foundation is intentionally left untouched — fixed material, see ASSET-SPEC.md §5.
 
     const barMat = flatMaterial(frame.color, frame.roughness);
     this.created.push(barMat);
+    const transforms = [];
     const rects = [...styleBars(selections.windowStyle), ...grilleBars(selections.windowGrille)];
     if (rects.length) {
       (this.groups.get(MAT.WINDOW_GLASS) || []).forEach((glassMesh) => {
-        buildBarsForGlass(glassMesh, rects, barMat, this.houseCenter, this.barGroup);
+        barTransformsForGlass(glassMesh, rects, this.houseCenter, transforms);
       });
     }
 
@@ -307,14 +335,22 @@ export class HouseMaterialController {
         : [];
     if (doorRects.length) {
       (this.groups.get(MAT.DOOR_GLASS) || []).forEach((glassMesh) => {
-        buildBarsForGlass(glassMesh, doorRects, barMat, this.houseCenter, this.barGroup);
+        barTransformsForGlass(glassMesh, doorRects, this.houseCenter, transforms);
       });
+    }
+
+    if (transforms.length) {
+      const bars = new THREE.InstancedMesh(BAR_GEOMETRY, barMat, transforms.length);
+      transforms.forEach((m, i) => bars.setMatrixAt(i, m));
+      bars.instanceMatrix.needsUpdate = true;
+      bars.castShadow = false;
+      this.barGroup.add(bars);
     }
   }
 
   dispose() {
     this.created.forEach(disposeMaterial);
-    this.barGroup.children.forEach((c) => c.geometry.dispose());
+    this.barGroup.children.forEach((c) => c.dispose && c.dispose());
     if (this.barGroup.parent) this.barGroup.parent.remove(this.barGroup);
   }
 }
