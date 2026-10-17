@@ -4,6 +4,10 @@ import { COMPANY } from './company.js';
 
 export const SERVICES = ['Roofing', 'Windows', 'Gutters', 'Siding', 'Doors', 'Concrete'];
 
+// Cash is paid in full at signing; financing is paid from the loan; an
+// insurance claim is paid in three parts as the insurer releases funds.
+export const METHODS = ['cash', 'finance', 'insurance'];
+
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
 export const newLine = () => ({ id: uid(), item: '', spec: '', qty: '', price: '' });
@@ -25,7 +29,7 @@ export function newContract(rep = {}) {
     start: '', finish: '',
     hoa: false, hoaBy: '',
     dumpster: '',
-    claim: false, insurer: '', claimNo: '',
+    insurer: '', claimNo: '',
     photos: '',
     signed: today, cancelBy: ''
   };
@@ -34,7 +38,7 @@ export function newContract(rep = {}) {
 /** Every field empty: the printable blank the office keeps in contracts/. */
 export function blankContract() {
   const c = newContract();
-  Object.assign(c, { submitted: '', expires: '', signed: '', method: '', lender: '', lines: [] });
+  Object.assign(c, { submitted: '', expires: '', signed: '', method: '', lines: [] });
   c.pct = { deposit: '', materials: '', final: '' };
   return c;
 }
@@ -43,6 +47,10 @@ export function blankContract() {
 export function cleanContract(raw) {
   if (!raw || typeof raw !== 'object' || typeof raw.id !== 'string') return null;
   const c = { ...newContract(), ...raw };
+  // Drafts from before insurance became a payment method kept it as a checkbox.
+  if (raw.claim === true && raw.method !== 'finance') c.method = 'insurance';
+  delete c.claim;
+  if (!METHODS.includes(c.method)) c.method = 'cash';
   c.pct = { ...COMPANY.payment, ...(raw.pct || {}) };
   c.services = Array.isArray(raw.services) ? raw.services.filter((s) => SERVICES.includes(s)) : [];
   c.lines = Array.isArray(raw.lines) ? raw.lines.filter((l) => l && typeof l.id === 'string').map((l) => ({ ...newLine(), ...l })) : [];
@@ -86,6 +94,14 @@ export function payments(c) {
 export function pctSum(c) {
   const p = [c.pct.deposit, c.pct.materials, c.pct.final].map(pctNum);
   return p.some((n) => n === null) ? null : Math.round(p.reduce((x, y) => x + y, 0) * 100) / 100;
+}
+
+/** With financing, the part of the price the customer pays themselves, at signing. */
+export function directPart(c) {
+  const t = totals(c);
+  const financed = parseMoney(c.financed);
+  if (!t || financed === null) return null;
+  return Math.max(0, Math.round((t.total - financed) * 100) / 100);
 }
 
 // --- dates ---------------------------------------------------------------
@@ -141,9 +157,7 @@ export const cancelBy = (c) => (isDate(c.cancelBy) ? c.cancelBy : cancelDeadline
 export function companyGaps() {
   const names = {
     street: 'office street address', zip: 'office ZIP', registration: 'contractor registration number',
-    contactName: 'customer contact name', holdback: 'punch-list holdback', lateDays: 'late-payment days',
-    lateRate: 'late-payment rate', financingDays: 'financing approval days', workmanshipWarranty: 'workmanship warranty term',
-    county: 'county for disputes'
+    contactName: 'customer contact name', county: 'county for disputes'
   };
   const out = Object.keys(names).filter((k) => !String(COMPANY[k] || '').trim()).map((k) => names[k]);
   if (COMPANY.unitPrices.some((u) => !String(u.price).trim())) out.push('hidden-damage unit prices');
@@ -164,14 +178,17 @@ export function problems(c) {
   if (!isDate(c.start)) out.push('Approximate start date');
   if (!isDate(c.finish)) out.push('Approximate completion date');
   if (isDate(c.start) && isDate(c.finish) && c.finish < c.start) out.push('Completion date is before the start date');
-  const sum = pctSum(c);
-  if (sum === null) out.push('All three payment percentages');
-  else if (sum !== 100) out.push(`Payment percentages add up to ${sum}%, not 100%`);
   if (!c.method) out.push('How the customer is paying');
   if (c.method === 'finance' && !c.lender.trim()) out.push('Lender name');
+  if (c.method === 'finance' && parseMoney(c.financed) === null) out.push('Amount financed');
+  if (c.method === 'insurance') {
+    const sum = pctSum(c);
+    if (sum === null) out.push('All three payment percentages');
+    else if (sum !== 100) out.push(`Payment percentages add up to ${sum}%, not 100%`);
+    if (!(c.insurer.trim() && c.claimNo.trim())) out.push('Insurer and claim number');
+  }
   if (c.sub && !c.subWork.trim()) out.push('Which work the subcontractor does');
   if (c.hoa && !c.hoaBy) out.push('Who gets HOA approval');
-  if (c.claim && !(c.insurer.trim() && c.claimNo.trim())) out.push('Insurer and claim number');
   if (!c.photos) out.push('Customer’s choice on project photos');
   if (!isDate(c.signed)) out.push('Signing date (for the Notice of Cancellation)');
   return out;

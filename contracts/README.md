@@ -39,17 +39,21 @@ Until these are filled in, they print as yellow `[PLACEHOLDERS]` on every
 contract, and the page lists which ones are missing. Fill them in
 `js/contract/company.js`:
 
-- The office street address and ZIP.
 - The contractor registration number(s).
 - The customer contact name.
-- The usual lender and the financing approval window.
-- Late-payment terms, the punch-list holdback, and any card fee.
-- The workmanship warranty term.
 - The county for disputes.
 - The hidden-damage unit prices.
+- Any card fee (optional).
 
-Also confirm that the windows warranty wording in Section 12 matches what you
-actually offer.
+Already set: the office address, Hearth as the default lender, and the fees.
+The late fee is 10% of the overdue amount at 10 days late, plus another 10% at
+30 days. A bounced check or returned ACH payment costs 25%. Both fees are capped
+at what Indiana law allows. Change any of these in the same file.
+
+How payment works: cash jobs are paid in full at signing. Financed jobs pay
+whatever isn't financed at signing. Insurance-claim jobs pay in three parts as
+the insurer releases funds. No work starts until the payment due before work
+has been received. Unpaid amounts are covered by a mechanic's lien (Section 16).
 
 Then run `node tools/make-contract.mjs` to refresh the blank Word copy below.
 
