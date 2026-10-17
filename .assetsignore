@@ -25,6 +25,9 @@ visualizer/models/ASSET-SPEC.md
 # three.js mirror). They run at author time, never in a browser.
 tools
 
+# Client contracts are internal documents, never published.
+contracts
+
 # Nothing below is part of the site.
 .DS_Store
 .claude
