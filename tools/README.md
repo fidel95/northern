@@ -155,3 +155,17 @@ Prints the current hash and exits non-zero if `_headers` is stale. Run it after
 To test the policy before deploying, serve the site with the headers applied
 rather than trusting it in production — a broken `form-action` takes the lead
 forms down silently.
+
+## `make-contract.mjs`
+
+Rewrites `contracts/Northern-Pines-Home-Improvement-Agreement.docx`, the blank
+agreement the office keeps for paper use, from the same source the contract
+page at `/internal/contract/` renders.
+
+```sh
+node tools/make-contract.mjs
+```
+
+The contract's wording lives in `js/contract/content.js` and the company's own
+details in `js/contract/company.js`. Run this after changing either one, so the
+blank copy says what the page says.
