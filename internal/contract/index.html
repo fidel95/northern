@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home Improvement Agreement | Northern Pines (internal)</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1f3a2e">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="stylesheet" href="/css/contract.css">
+<style id="page-style"></style>
+<script type="module" src="/js/contract/app.js"></script>
+</head>
+<body>
+
+<div class="app">
+  <header class="app__bar">
+    <h1>Home Improvement Agreement</h1>
+    <p>Internal tool, not linked from the site. Drafts are saved in this browser only. Delete a draft once the signed copy is filed.</p>
+  </header>
+
+  <form class="app__form" id="form" autocomplete="off" novalidate>
+    <section class="panel" aria-labelledby="draft-h">
+      <h2 id="draft-h">Contract</h2>
+      <label class="field"><span>Open draft</span><select id="draft-select"></select></label>
+      <div class="row">
+        <button type="button" id="draft-new" class="btn">New contract</button>
+        <button type="button" id="draft-delete" class="btn btn--danger">Delete draft</button>
+      </div>
+      <div class="fields">
+        <label class="field"><span>Agreement no.</span><input data-f="no" type="text" maxlength="40" placeholder="e.g. NP-2026-0142"></label>
+        <label class="field"><span>Date given to customer</span><input data-f="submitted" type="date"></label>
+        <label class="field"><span>Offer expires</span><input data-f="expires" type="date"></label>
+      </div>
+      <div class="fields">
+        <label class="field"><span>Your name</span><input data-f="repName" type="text" autocomplete="name"></label>
+        <label class="field"><span>Your phone</span><input data-f="repPhone" type="tel" autocomplete="tel"></label>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="cust-h">
+      <h2 id="cust-h">Customer</h2>
+      <div class="fields">
+        <label class="field"><span>Customer name</span><input data-f="cust1" type="text"></label>
+        <label class="field"><span>Second customer (optional)</span><input data-f="cust2" type="text"></label>
+      </div>
+      <label class="field"><span>Mailing address</span><input data-f="mailing" type="text" placeholder="Street, city, state ZIP"></label>
+      <label class="check"><input data-f="projectSame" type="checkbox"> The work is at the mailing address</label>
+      <label class="field" id="project-field"><span>Project address</span><input data-f="project" type="text" placeholder="Street, city, IN ZIP"></label>
+      <div class="fields">
+        <label class="field"><span>Phone</span><input data-f="phone" type="tel"></label>
+        <label class="field"><span>Email</span><input data-f="email" type="email"></label>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="work-h">
+      <h2 id="work-h">Work</h2>
+      <fieldset class="group">
+        <legend>Services</legend>
+        <div class="checks" id="services"></div>
+      </fieldset>
+      <div id="lines" class="lines"></div>
+      <div><button type="button" id="add-line" class="btn btn--small">+ Add line item</button></div>
+      <label class="field"><span>Extra pages attached (optional)</span><input data-f="attached" type="text" placeholder="e.g. 1 page of window specifications"></label>
+      <label class="field"><span>Also included, one per line (optional)</span><textarea data-f="inclusions" rows="2"></textarea></label>
+      <label class="field"><span>Also not included, one per line (optional)</span><textarea data-f="exclusions" rows="2"></textarea></label>
+      <label class="check"><input data-f="sub" type="checkbox"> A subcontractor or supplier does some of the work</label>
+      <label class="field" id="sub-field"><span>Which work, and which company</span><input data-f="subWork" type="text"></label>
+    </section>
+
+    <section class="panel" aria-labelledby="price-h">
+      <h2 id="price-h">Price and payment</h2>
+      <dl class="sums">
+        <dt>Line items</dt><dd id="subtotal">n/a</dd>
+      </dl>
+      <label class="field field--narrow"><span>Indiana sales tax ($)</span><input data-f="tax" type="text" inputmode="decimal" placeholder="0.00"></label>
+      <dl class="sums sums--total">
+        <dt>Total contract price</dt><dd id="total">n/a</dd>
+      </dl>
+      <fieldset class="group">
+        <legend>Payment schedule (% of total)</legend>
+        <div class="fields fields--3">
+          <label class="field"><span>Deposit at signing</span><input data-f="pct.deposit" type="text" inputmode="decimal"><output id="pay-0"></output></label>
+          <label class="field"><span>At material delivery</span><input data-f="pct.materials" type="text" inputmode="decimal"><output id="pay-1"></output></label>
+          <label class="field"><span>At completion</span><input data-f="pct.final" type="text" inputmode="decimal"><output id="pay-2"></output></label>
+        </div>
+        <p class="hint" id="pct-hint"></p>
+      </fieldset>
+      <fieldset class="group">
+        <legend>How the customer is paying</legend>
+        <label class="check"><input data-f="method" type="radio" name="method" value="cash"> Cash, check, ACH or card</label>
+        <label class="check"><input data-f="method" type="radio" name="method" value="finance"> Financing</label>
+      </fieldset>
+      <div id="finance-fields" class="fields">
+        <label class="field"><span>Lender</span><input data-f="lender" type="text"></label>
+        <label class="field"><span>Plan or promotion</span><input data-f="plan" type="text"></label>
+        <label class="field"><span>Amount financed ($)</span><input data-f="financed" type="text" inputmode="decimal"></label>
+      </div>
+      <p class="hint" id="finance-hint"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="sched-h">
+      <h2 id="sched-h">Schedule and site</h2>
+      <div class="fields">
+        <label class="field"><span>Approximate start</span><input data-f="start" type="date"></label>
+        <label class="field"><span>Approximate completion</span><input data-f="finish" type="date"></label>
+      </div>
+      <label class="field"><span>Dumpster or trailer goes</span><input data-f="dumpster" type="text" placeholder="e.g. the left side of the driveway"></label>
+      <label class="check"><input data-f="hoa" type="checkbox"> HOA approval is required</label>
+      <fieldset class="group" id="hoa-fields">
+        <legend>Who gets HOA approval</legend>
+        <label class="check"><input data-f="hoaBy" type="radio" name="hoaBy" value="customer"> Customer</label>
+        <label class="check"><input data-f="hoaBy" type="radio" name="hoaBy" value="company"> Northern Pines</label>
+      </fieldset>
+    </section>
+
+    <section class="panel" aria-labelledby="extra-h">
+      <h2 id="extra-h">Insurance and photos</h2>
+      <label class="check"><input data-f="claim" type="checkbox"> Paid in whole or in part by a property insurance claim</label>
+      <div id="claim-fields" class="fields">
+        <label class="field"><span>Insurance company</span><input data-f="insurer" type="text"></label>
+        <label class="field"><span>Claim number</span><input data-f="claimNo" type="text"></label>
+      </div>
+      <fieldset class="group">
+        <legend>May we use photos of the house in marketing?</legend>
+        <label class="check"><input data-f="photos" type="radio" name="photos" value="yes"> Yes</label>
+        <label class="check"><input data-f="photos" type="radio" name="photos" value="no"> No, job records only</label>
+      </fieldset>
+    </section>
+
+    <section class="panel" aria-labelledby="sign-h">
+      <h2 id="sign-h">Signing</h2>
+      <div class="fields">
+        <label class="field"><span>Signing date</span><input data-f="signed" type="date"></label>
+        <label class="field"><span>Cancel-by date (leave blank to use the calculated one)</span><input data-f="cancelBy" type="date"></label>
+      </div>
+      <p class="hint" id="cancel-hint"></p>
+    </section>
+
+    <section class="panel panel--actions" aria-labelledby="done-h">
+      <h2 id="done-h">Download</h2>
+      <div id="problems-wrap">
+        <p class="hint">Still blank. Indiana requires these before the customer signs:</p>
+        <ul id="problems" class="problems"></ul>
+      </div>
+      <p class="ok" id="ready" hidden>Everything required is filled in.</p>
+      <p class="hint" id="company-gaps" hidden></p>
+      <div class="row">
+        <button type="button" id="download" class="btn btn--primary">Download Word (.docx)</button>
+        <button type="button" id="print" class="btn">Print or save PDF</button>
+      </div>
+      <p class="hint">To get a PDF, choose "Save as PDF" in the print dialog. Leave the customer a signed copy and both Notice of Cancellation pages.</p>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+  </form>
+
+  <section class="app__preview" aria-label="Contract preview">
+    <div id="preview"></div>
+  </section>
+</div>
+
+</body>
+</html>
