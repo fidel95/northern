@@ -9,7 +9,7 @@
 // line keeps its placeholder instead of being left out.
 
 import { COMPANY as K } from './company.js';
-import { SERVICES, parseMoney, fmtMoney, showMoney, totals, payments, fmtDate, cancelBy } from './model.js';
+import { SERVICES, fmtMoney, showMoney, totals, payments, directPart, fmtDate, cancelBy } from './model.js';
 
 const f = (v, ph, bold) => ({ v: String(v ?? '').trim(), ph, b: bold });
 const B = (text) => ({ b: text });
@@ -92,7 +92,7 @@ export function buildContract(c, { blank = false } = {}) {
       ...extra(c.exclusions, 'OTHER EXCLUSIONS, OR DELETE THIS LINE')),
     p(B('Who does the work:'), { keepNext: true, before: 80 }),
     check(!blank && !c.sub, 'All work is done by Northern Pines crews.'),
-    check(c.sub, ['Some work is done by a subcontractor or supplier: ', f(c.subWork, 'WORK AND COMPANY NAME'), '.']),
+    check(c.sub, ['Some work is done by a subcontractor or supplier', ...(blank || c.sub ? [': ', f(c.subWork, 'WORK AND COMPANY NAME')] : []), '.']),
 
     h('3. Contract price'),
     { t: 'table', widths: [6960, 2400], total: true, right: [1], rows: [
@@ -102,29 +102,37 @@ export function buildContract(c, { blank = false } = {}) {
     ] },
     p('The contract price covers everything described in Section 2. It changes only through a signed change order (Section 8).', { before: 80 }),
 
-    h('4. Payment schedule'),
-    { t: 'table', widths: [3000, 3640, 1100, 1620], header: true, total: true, right: [2, 3], rows: [
+    h('4. Payment'),
+    p('Check one.'),
+    // Amounts print only on the option chosen (or every option on the blank).
+    check(c.method === 'cash', [B('Paid in full at signing. '), 'The full contract price',
+      ...(blank || c.method === 'cash' ? [' of ', money(t && t.total)] : []), ' is due when you sign this Agreement.']),
+    check(c.method === 'finance', [B('Financing through '), f(c.lender, 'LENDER NAME', true), B('. '), 'The amount financed',
+      ...(blank || c.method === 'finance' ? [', ', f(showMoney(c.financed), '$0.00'), ','] : []), ' is paid from your loan (Section 5). The rest of the price',
+      ...(blank || c.method === 'finance' ? [', ', money(directPart(c)), ','] : []), ' is due when you sign.']),
+    check(c.method === 'insurance', [B('Insurance claim. '), 'The price is paid in the three parts below as your insurer releases the claim funds (Section 15).']),
+    ...(blank || c.method === 'insurance' ? [{ t: 'table', widths: [3000, 3640, 1100, 1620], header: true, total: true, right: [2, 3], rows: [
       ['Payment', 'When it is due', '% of price', 'Amount'],
-      ['1. Deposit', 'When you sign this Agreement', pctCell(c.pct.deposit), [money(pay && pay[0])]],
+      ['1. First payment', 'When you sign, before any work begins. It includes your deductible.', pctCell(c.pct.deposit), [money(pay && pay[0])]],
       ['2. Materials payment', 'When materials are delivered to the project address', pctCell(c.pct.materials), [money(pay && pay[1])]],
       ['3. Final balance', 'When the work is complete and we have done the final walkthrough with you', pctCell(c.pct.final), [money(pay && pay[2])]],
       ['Total', '', '100%', [money(t && t.total)]]
-    ] },
-    ul(['We accept check, ACH bank transfer and card.', ...(K.cardFee ? [' ' + K.cardFee] : blank ? [' ', f('', 'CARD FEE, IF ANY, OR DELETE THIS SENTENCE')] : [])],
-      'If you cancel within the three-business-day cancellation period (Section 18), your deposit is refunded in full.',
-      ['If a small punch-list item is still open at the final walkthrough, you may hold back ', f(K.holdback, '$ HOLDBACK AMOUNT'), ' of the final balance until it is finished, and pay the rest when it is due.'],
-      ['A payment more than ', f(K.lateDays, '__'), ' days late accrues interest at ', f(K.lateRate, '__'), '% per month, never more than Indiana law allows.']),
+    ] }] : []),
+    ul([B('No work before payment. '), 'Northern Pines does not order materials or start work until it has received the payment due before work begins: the full price on a cash job, the loan proceeds and any part not financed on a financed job, or the first payment on an insurance-claim job.'],
+      ['We accept check, ACH bank transfer and card.', ...(K.cardFee ? [' ' + K.cardFee] : blank ? [' ', f('', 'CARD FEE, IF ANY, OR DELETE THIS SENTENCE')] : [])],
+      'If you cancel within the three-business-day cancellation period (Section 18), every payment you made is refunded in full.',
+      [B('Late payments. '), 'If a payment is not received within ', f(K.lateFee.days, '__'), ' days after it is due, a late fee of ', f(K.lateFee.pct, '__'), '% of the overdue amount is added. If it is still unpaid ',
+        f(K.lateFee.moreDays, '__'), ' days after it is due, a further ', f(K.lateFee.morePct, '__'), '% is added. Late fees are never more than Indiana law allows.'],
+      [B('Returned payments. '), 'A check or ACH payment that is returned unpaid carries a fee of ', f(K.returnedPaymentPct, '__'), '% of its amount, or the most Indiana law allows if that is less, and the payment is still due.'],
+      'Unpaid amounts are secured by Northern Pines’ lien rights (Section 16).'),
 
-    h('5. How you are paying'),
-    p('Check one.'),
-    check(c.method === 'cash', [B('Cash, check, ACH or card.'), ' You pay according to the schedule in Section 4.']),
-    check(c.method === 'finance', [B('Financing through '), f(c.lender, 'LENDER NAME', true), B('.'), ' Plan: ', f(c.plan, 'PLAN / PROMOTION'), '. Amount financed: ', f(showMoney(c.financed), '$0.00'), '. Amount you pay directly: ',
-      c.method === 'finance' && t && parseMoney(c.financed) !== null ? money(Math.max(0, Math.round((t.total - parseMoney(c.financed)) * 100) / 100)) : f('', '$0.00'), '.']),
-    p(B('If you choose financing:'), { keepNext: true, before: 100 }),
+    h('5. Financing'),
+    p('If you are financing (Section 4):', { keepNext: true }),
+    p(['Lender: ', f(c.lender, 'LENDER NAME', true), '. Plan: ', f(c.plan, blank || c.method === 'finance' ? 'PLAN / PROMOTION' : 'n/a'), '. Amount financed: ', f(c.method === 'finance' || blank ? showMoney(c.financed) : 'n/a', '$0.00'), '.']),
     ul('The lender, not Northern Pines, provides the financing. The lender decides whether you are approved, and sets your rate, term and monthly payment, based on your credit score and its own criteria. Northern Pines cannot promise approval or a particular rate.',
       'Your loan is governed by the lender’s own credit agreement and disclosures, which the lender gives you separately. This Agreement is not a loan agreement. Read the lender’s documents before you sign them.',
-      'The lender pays Northern Pines directly, on the lender’s schedule. Any part of the price that is not financed is due under Section 4.',
-      [B('Financing contingency. '), 'Nothing is ordered until your financing is approved. If the lender does not approve you within ', f(K.financingDays, '__'), ' days after you sign, or approves you on terms you do not accept, you may (a) pay under the cash schedule in Section 4, (b) apply with another lender, or (c) cancel this Agreement in writing, and Northern Pines will refund any payment you made within 10 business days.']),
+      'Your loan proceeds are used to pay Northern Pines. Work begins once Northern Pines has received the amount financed and any part of the price that is not financed.',
+      [B('Financing contingency. '), 'Nothing is ordered until your financing is approved, which usually takes minutes. If you are not approved, or are approved on terms you do not accept, you may (a) pay in full under Section 4, (b) apply with another lender, or (c) cancel this Agreement in writing, and Northern Pines will refund any payment you made within 10 business days.']),
 
     h('6. Schedule'),
     { t: 'table', widths: [4680, 4680], labels: 'first', rows: [
@@ -164,8 +172,8 @@ export function buildContract(c, { blank = false } = {}) {
       'Remove fragile items from walls and shelves next to the work. Roofing and siding work can shake interior walls.'),
 
     h('12. Warranty'),
-    ul([B('Workmanship. '), 'Northern Pines warrants its installation workmanship for ', f(K.workmanshipWarranty, 'WORKMANSHIP WARRANTY TERM'), ' from the completion date.'],
-      [B('Windows. '), 'Windows installed by Northern Pines carry a lifetime warranty on glass, frame and labor. We administer it ourselves, and it transfers once to a new owner of the home.'],
+    ul([B('Windows. '), 'Windows installed by Northern Pines carry lifetime coverage on the glass and frame, including seal failure and obstructed glass, plus lifetime labor on our own installation. We administer it ourselves, so there is no manufacturer hotline to call, and it transfers once to a new owner of the home.'],
+      [B('All other work. '), 'Where the work carries a Northern Pines warranty, we give you its terms in writing when the work is done.'],
       [B('Manufacturer warranties. '), 'Products also carry their manufacturers’ warranties, which we pass on to you. We give you copies when the work is done.'],
       [B('What the warranty does not cover: '), 'damage from misuse, accidents, fire, or storms beyond the product’s rating; settling or structural movement of the house; repairs or changes made by others; normal wear; and failure to follow the care instructions we provide.'],
       `The warranty takes effect when the contract price has been paid in full. To make a claim, call ${K.phone} and ask for service. Have your agreement number handy if you can.`,
@@ -178,7 +186,7 @@ export function buildContract(c, { blank = false } = {}) {
     p('Northern Pines carries general liability insurance and workers’ compensation insurance, and will give you certificates on request. Northern Pines is a registered contractor wherever the county or city requires it, under the registration number(s) at the top of this Agreement.'),
 
     h('15. Insurance-claim projects'),
-    check(c.claim, ['This project is being paid for, in whole or in part, from a property insurance claim. Insurer: ', f(c.claim || blank ? c.insurer : 'n/a', 'INSURANCE COMPANY'), '. Claim number: ', f(c.claim || blank ? c.claimNo : 'n/a', 'CLAIM NO.'), '.']),
+    check(c.method === 'insurance', ['This project is being paid for from a property insurance claim. Insurer: ', f(c.method === 'insurance' || blank ? c.insurer : 'n/a', 'INSURANCE COMPANY'), '. Claim number: ', f(c.method === 'insurance' || blank ? c.claimNo : 'n/a', 'CLAIM NO.'), '.']),
     p('If the box above is checked:', { keepNext: true }),
     ul([B('If your insurer tells you in writing that all or part of your claim is denied, you may cancel this Agreement within three business days after you receive that notice. '), 'To cancel, give written notice to Northern Pines at the address at the top of this Agreement. Any payment you made will be refunded.'],
       'Northern Pines is not a public adjuster and will not negotiate your claim with your insurer for you.',
@@ -186,7 +194,9 @@ export function buildContract(c, { blank = false } = {}) {
       'The price in Section 3 is the price for the work. If your insurer approves additional work, it is added only through a signed change order.'),
 
     h('16. Liens and project photos'),
-    p([B('Liens. '), 'Indiana law lets contractors, subcontractors and suppliers who furnish labor or materials for your home record a mechanic’s lien against the property if they are not paid. Northern Pines pays its suppliers and any subcontractors on this project out of the payments you make. When you make your final payment, you may ask for a written lien waiver from Northern Pines and from any subcontractor or supplier on the job.']),
+    p([B('Liens. '), 'Indiana law lets contractors, subcontractors and suppliers who furnish labor or materials for your home record a mechanic’s lien against the property if they are not paid. ',
+      B('If any amount under this Agreement is not paid when due, Northern Pines will record a mechanic’s lien against the project property for the unpaid amount, as Indiana law allows, '),
+      'and may also recover late fees and, where Indiana law allows, its collection costs and reasonable attorney’s fees. Northern Pines pays its suppliers and any subcontractors on this project out of the payments you make. Once you have paid in full, you may ask for a written lien waiver from Northern Pines and from any subcontractor or supplier on the job.']),
     p([B('Project photos. '), 'Check one.'], { keepNext: true }),
     check(c.photos === 'yes', 'Northern Pines may use before-and-after photos of the outside of my home in its marketing (website, reviews and social media). Photos will not show my house number, street sign or any people.'),
     check(c.photos === 'no', 'Photos may be taken for job records only, and not used in marketing.'),

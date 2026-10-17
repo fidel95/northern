@@ -78,25 +78,32 @@
         <dt>Total contract price</dt><dd id="total">n/a</dd>
       </dl>
       <fieldset class="group">
-        <legend>Payment schedule (% of total)</legend>
-        <div class="fields fields--3">
-          <label class="field"><span>Deposit at signing</span><input data-f="pct.deposit" type="text" inputmode="decimal"><output id="pay-0"></output></label>
-          <label class="field"><span>At material delivery</span><input data-f="pct.materials" type="text" inputmode="decimal"><output id="pay-1"></output></label>
-          <label class="field"><span>At completion</span><input data-f="pct.final" type="text" inputmode="decimal"><output id="pay-2"></output></label>
-        </div>
-        <p class="hint" id="pct-hint"></p>
-      </fieldset>
-      <fieldset class="group">
         <legend>How the customer is paying</legend>
-        <label class="check"><input data-f="method" type="radio" name="method" value="cash"> Cash, check, ACH or card</label>
+        <label class="check"><input data-f="method" type="radio" name="method" value="cash"> Paying in full at signing (check, ACH or card)</label>
         <label class="check"><input data-f="method" type="radio" name="method" value="finance"> Financing</label>
+        <label class="check"><input data-f="method" type="radio" name="method" value="insurance"> Insurance claim</label>
       </fieldset>
       <div id="finance-fields" class="fields">
         <label class="field"><span>Lender</span><input data-f="lender" type="text"></label>
         <label class="field"><span>Plan or promotion</span><input data-f="plan" type="text"></label>
         <label class="field"><span>Amount financed ($)</span><input data-f="financed" type="text" inputmode="decimal"></label>
       </div>
-      <p class="hint" id="finance-hint"></p>
+      <div id="claim-fields" class="group">
+        <div class="fields">
+          <label class="field"><span>Insurance company</span><input data-f="insurer" type="text"></label>
+          <label class="field"><span>Claim number</span><input data-f="claimNo" type="text"></label>
+        </div>
+        <fieldset class="group">
+          <legend>Payments as the insurer releases funds (% of total)</legend>
+          <div class="fields fields--3">
+            <label class="field"><span>At signing, with deductible</span><input data-f="pct.deposit" type="text" inputmode="decimal"><output id="pay-0"></output></label>
+            <label class="field"><span>At material delivery</span><input data-f="pct.materials" type="text" inputmode="decimal"><output id="pay-1"></output></label>
+            <label class="field"><span>At completion</span><input data-f="pct.final" type="text" inputmode="decimal"><output id="pay-2"></output></label>
+          </div>
+          <p class="hint" id="pct-hint"></p>
+        </fieldset>
+      </div>
+      <p class="hint" id="pay-hint"></p>
     </section>
 
     <section class="panel" aria-labelledby="sched-h">
@@ -115,12 +122,7 @@
     </section>
 
     <section class="panel" aria-labelledby="extra-h">
-      <h2 id="extra-h">Insurance and photos</h2>
-      <label class="check"><input data-f="claim" type="checkbox"> Paid in whole or in part by a property insurance claim</label>
-      <div id="claim-fields" class="fields">
-        <label class="field"><span>Insurance company</span><input data-f="insurer" type="text"></label>
-        <label class="field"><span>Claim number</span><input data-f="claimNo" type="text"></label>
-      </div>
+      <h2 id="extra-h">Photos</h2>
       <fieldset class="group">
         <legend>May we use photos of the house in marketing?</legend>
         <label class="check"><input data-f="photos" type="radio" name="photos" value="yes"> Yes</label>

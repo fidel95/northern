@@ -1,4 +1,4 @@
-import { SERVICES, newContract, newLine, cleanContract, totals, payments, pctSum, parseMoney, fmtMoney, problems, companyGaps, cancelDeadline, fmtDate, isDate } from './model.js';
+import { SERVICES, newContract, newLine, cleanContract, totals, payments, pctSum, directPart, fmtMoney, problems, companyGaps, cancelDeadline, fmtDate, isDate } from './model.js';
 import { contractHTML, esc } from './html.js';
 import { contractDocx } from './docx.js';
 
@@ -111,8 +111,8 @@ function refresh() {
   $('project-field').hidden = c.projectSame;
   $('sub-field').hidden = !c.sub;
   $('finance-fields').hidden = c.method !== 'finance';
+  $('claim-fields').hidden = c.method !== 'insurance';
   $('hoa-fields').hidden = !c.hoa;
-  $('claim-fields').hidden = !c.claim;
 
   const t = totals(c);
   $('subtotal').textContent = t ? fmtMoney(t.subtotal) : 'n/a';
@@ -121,9 +121,11 @@ function refresh() {
   [0, 1, 2].forEach((i) => { $('pay-' + i).textContent = pay ? fmtMoney(pay[i]) : ''; });
   const sum = pctSum(c);
   $('pct-hint').textContent = sum === null ? 'Enter all three percentages.' : sum === 100 ? '' : `These add up to ${sum}%. They need to add up to 100%.`;
-  const financed = parseMoney(c.financed);
-  $('finance-hint').textContent = c.method === 'finance' && t && financed !== null
-    ? `The customer pays ${fmtMoney(Math.max(0, Math.round((t.total - financed) * 100) / 100))} directly.` : '';
+  const direct = directPart(c);
+  $('pay-hint').textContent = !t ? ''
+    : c.method === 'cash' ? `The customer pays ${fmtMoney(t.total)} at signing. No work starts until it's received.`
+      : c.method === 'finance' ? (direct === null ? 'Enter the amount financed.' : `The customer pays ${fmtMoney(direct)} at signing; the loan covers the rest. No work starts until both are received.`)
+        : c.method === 'insurance' ? 'No work starts until the first payment is received.' : '';
 
   const calc = cancelDeadline(c.signed);
   $('cancel-hint').textContent = !isDate(c.signed) ? 'Enter the signing date to work out the cancel-by date.'

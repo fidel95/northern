@@ -17,18 +17,20 @@ export const COMPANY = {
   contactPhone: '(765) 376-1197',
   contactEmail: 'sales@npconstructionservices.com',
 
-  // Starting percentages for the three payments; reps can change them per job.
+  // Cash jobs are paid in full at signing. Insurance-claim jobs pay in three
+  // parts; these are the starting percentages, and reps can change them per job.
   payment: { deposit: '33', materials: '33', final: '34' },
   cardFee: '',          // e.g. 'Card payments carry a 3% processing fee.' Empty leaves the sentence out.
-  holdback: '',         // e.g. '$500'
-  lateDays: '',         // e.g. '10'
-  lateRate: '',         // e.g. '1.5'
+
+  // Late fees, as a percentage of the overdue amount: the first once a payment
+  // is `days` late, a second once it is `moreDays` late. Always capped at what
+  // Indiana law allows.
+  lateFee: { days: '10', pct: '10', moreDays: '30', morePct: '10' },
+  returnedPaymentPct: '25',  // fee on a bounced check or returned ACH payment, likewise capped
 
   lender: 'Hearth',     // the usual financing partner; reps can change it per job
-  financingDays: '',    // days the lender has to approve before the customer may switch or cancel
 
-  workmanshipWarranty: '',  // e.g. '10 years'
-  county: '',               // county whose courts hear disputes, e.g. 'Montgomery'
+  county: '',           // county whose courts hear disputes, e.g. 'Montgomery'
 
   // Section 7. Empty prices print as placeholders.
   unitPrices: [
