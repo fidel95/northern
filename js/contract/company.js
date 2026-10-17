@@ -4,10 +4,10 @@
 
 export const COMPANY = {
   name: 'Northern Pines Construction Services',
-  street: '',
+  street: '306 Jones Avenue',
   city: 'Crawfordsville',
   state: 'IN',
-  zip: '',
+  zip: '47933',
   phone: '(765) 376-1197',
   email: 'sales@npconstructionservices.com',
   registration: '',
@@ -24,7 +24,7 @@ export const COMPANY = {
   lateDays: '',         // e.g. '10'
   lateRate: '',         // e.g. '1.5'
 
-  lender: '',           // the usual financing partner; reps can change it per job
+  lender: 'Hearth',     // the usual financing partner; reps can change it per job
   financingDays: '',    // days the lender has to approve before the customer may switch or cancel
 
   workmanshipWarranty: '',  // e.g. '10 years'
