@@ -8,9 +8,9 @@
   // within each tier (configured visually in the Visualizer), not priced
   // separately.
   var WINDOW_TIERS = [
-    { id: 'good', name: 'Good', price: 850, features: ['Professional installation included', '10-year warranty'] },
-    { id: 'better', name: 'Better', price: 1200, features: ['Professional installation included', '20-year warranty'], badge: 'Most Popular' },
-    { id: 'best', name: 'Best', price: 1600, features: ['Professional installation included', 'Lifetime warranty'] }
+    { id: 'good', name: 'Vero\u2122 Vinyl', price: 950, colorAdd: 50, features: ['Great value', 'Low maintenance', 'Two-week turnaround', '10-year wear & tear guarantee'] },
+    { id: 'better', name: 'Mezzo\u00ae Vinyl', price: 1200, colorAdd: 70, features: ['Maximum daylight', 'Energy efficiency', 'Total weather protection', '20-year wear & tear guarantee'], badge: 'Best Seller' },
+    { id: 'best', name: 'Sovereign\u00ae Vinyl', price: 1800, colorAdd: 80, features: ['Premium design', 'Heavy-duty construction', 'Premium screen integration', 'Lifetime wear & tear guarantee'] }
   ];
 
   // Patio and entry doors keep their existing per-option pricing model —
@@ -324,6 +324,11 @@
       });
       card.appendChild(feats);
 
+      var colorNote = document.createElement('p');
+      colorNote.className = 'est-note';
+      colorNote.textContent = '+' + money(t.colorAdd) + '/window for a color option';
+      card.appendChild(colorNote);
+
       var total = document.createElement('div');
       total.className = 'est-tier-card__total';
       total.innerHTML = money(t.price * state.winQty) + ' <span>total for ' + state.winQty + (state.winQty === 1 ? ' window' : ' windows') + '</span>';
@@ -360,7 +365,7 @@
 
     var disclaimer = document.createElement('p');
     disclaimer.className = 'est-note est-tier-disclaimer';
-    disclaimer.textContent = 'Final pricing is confirmed after an on-site measurement.';
+    disclaimer.textContent = 'Window pricing varies by size. Prices shown are for windows under 100 united inches. All windows are backed by a lifetime factory warranty. Final pricing is confirmed after an on-site measurement.';
     els.groups.appendChild(disclaimer);
   }
 
@@ -375,7 +380,7 @@
     var row = document.createElement('div');
     row.className = 'est-cart__item';
     row.innerHTML =
-      '<div style="min-width:0"><strong class="est-cart__item-title">' + state.winQty + '&times; ' + tier.name + ' Tier Window' + (state.winQty === 1 ? '' : 's') + '</strong>' +
+      '<div style="min-width:0"><strong class="est-cart__item-title">' + state.winQty + '&times; ' + tier.name + ' Window' + (state.winQty === 1 ? '' : 's') + '</strong>' +
       '<span class="est-cart__item-meta">' + tier.features.join(' · ') + ' · ' + money(tier.price) + ' each</span></div>' +
       '<div class="est-cart__item-right"><span class="est-cart__item-sub">' + money(total) + '</span></div>';
     els.cartBody.appendChild(row);
@@ -383,7 +388,7 @@
     els.rangeBlock.style.display = '';
     els.rangeLabel.textContent = 'YOUR TOTAL, INSTALLED';
     els.rangeText.textContent = money(total);
-    els.rangeNote.textContent = 'Final pricing is confirmed after an on-site measurement.';
+    els.rangeNote.textContent = 'Window pricing varies by size. Prices shown are for windows under 100 united inches. All windows are backed by a lifetime factory warranty. Final pricing is confirmed after an on-site measurement.';
   }
 
   function updateDescriptionForWindows() {
@@ -392,7 +397,7 @@
     var total = tier.price * state.winQty;
     var spec = visualizerSpecLine();
     els.desc.value = 'INSTANT ESTIMATE\n' +
-      state.winQty + '× ' + tier.name + ' tier window' + (state.winQty === 1 ? '' : 's') + ' (' + money(tier.price) + '/window, ' + tier.features.join(' · ') + ')\n' +
+      state.winQty + '× ' + tier.name + ' window' + (state.winQty === 1 ? '' : 's') + ' (' + money(tier.price) + '/window, ' + tier.features.join(' · ') + ')\n' +
       (spec ? 'Configured in the visualizer: ' + spec + '\n' : '') +
       'Estimated total: ' + money(total) + '\n' +
       '(Final pricing is confirmed after an on-site measurement.)' +
