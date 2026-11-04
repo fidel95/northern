@@ -21,7 +21,8 @@ const RESERVE_TTL_MS = 4 * 3600000;
 const CAPS = { ownership: 10 * MB, income: 100 * MB, video: 500 * MB };
 const DOC_EXT = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'webp'];
 const VID_EXT = ['mp4', 'mov', 'm4v', 'webm', '3gp'];
-const MAX_PART = 9 * MB;
+const PART_SIZE = 8 * MB;
+const MAX_PART = PART_SIZE;
 const MAX_PARTS = 70;
 const SESSION_HOURS = 4;
 const LINK_DAYS = 21;
@@ -83,13 +84,17 @@ export class Ledger extends DurableObject {
     this.sql.exec('UPDATE res SET bytes = ?, done = 1 WHERE k = ?', actual, key);
     return true;
   }
+  reserved(key) {
+    const r = this.sql.exec('SELECT bytes FROM res WHERE k = ? AND done = 0', key).toArray();
+    return r.length ? r[0].bytes : 0;
+  }
   release(key) { this.sql.exec('DELETE FROM res WHERE k = ?', key); }
 }
 const ipKey = async (env, request) => (await hmac(env.SESSION_SECRET, `ip.${request.headers.get('CF-Connecting-IP') || 'unknown'}`)).slice(0, 24);
 const ledger = (env) => env.LEDGER.get(env.LEDGER.idFromName('giveaway'));
 
 const json = (data, status = 200) =>
-  new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
+  new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 const fail = (status, error) => json({ error }, status);
 
 const enc = new TextEncoder();
@@ -104,8 +109,28 @@ function same(a, b) {
   for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return d === 0;
 }
+const MIME = {
+  pdf: 'application/pdf', doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', heic: 'image/heic', heif: 'image/heif', webp: 'image/webp',
+  mp4: 'video/mp4', mov: 'video/quicktime', m4v: 'video/x-m4v', webm: 'video/webm', '3gp': 'video/3gpp',
+};
+// Cheap signature check for documents so a renamed .exe/.html can't pose as a PDF or photo.
+function looksRight(ext, b) {
+  const at = (o, str) => [...str].every((c, i) => b[o + i] === c.charCodeAt(0));
+  const hex = (...v) => v.every((x, i) => b[i] === x);
+  switch (ext) {
+    case 'pdf': return at(0, '%PDF');
+    case 'jpg': case 'jpeg': return hex(0xff, 0xd8, 0xff);
+    case 'png': return hex(0x89, 0x50, 0x4e, 0x47);
+    case 'webp': return at(0, 'RIFF') && at(8, 'WEBP');
+    case 'heic': case 'heif': return at(4, 'ftyp');
+    case 'docx': return hex(0x50, 0x4b);
+    case 'doc': return hex(0xd0, 0xcf, 0x11, 0xe0);
+    default: return true; // videos: too many valid container variants to police by header
+  }
+}
 const extOf = (name) => (/\.([^.]+)$/.exec(name || '') || [])[1]?.toLowerCase() || '';
-const safeName = (name) => (name || 'file').replace(/[^A-Za-z0-9._-]+/g, '_').slice(-80);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 async function checkToken(env, url) {
@@ -137,8 +162,10 @@ async function handle(request, env) {
     const obj = await env.BUCKET.get(key);
     if (!obj) return fail(404, 'not found');
     const h = new Headers({
-      'Content-Type': obj.httpMetadata?.contentType || 'application/octet-stream',
-      'Content-Disposition': `attachment; filename="${key.split('/').pop()}"`,
+      'Content-Type': MIME[extOf(key)] || 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${key.split('/').pop().replace(/[^A-Za-z0-9._-]/g, '_')}"`,
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; sandbox",
       'Content-Length': String(obj.size),
       'Cache-Control': 'private, no-store',
       'X-Robots-Tag': 'noindex',
@@ -180,7 +207,7 @@ async function handle(request, env) {
     const key = `${prefix}${kind}.${extOf(name)}`;
     if (!(await ledger(env).reserve(key, size))) return fail(503, 'full');
     const mp = await env.BUCKET.createMultipartUpload(key, {
-      httpMetadata: { contentType: url.searchParams.get('type') || 'application/octet-stream' },
+      httpMetadata: { contentType: MIME[extOf(name)] || 'application/octet-stream' },
     });
     return json({ key, uploadId: mp.uploadId });
   }
@@ -191,15 +218,27 @@ async function handle(request, env) {
     if (!key.startsWith(prefix) || !(n >= 1 && n <= MAX_PARTS)) return fail(400, 'bad part');
     const len = Number(request.headers.get('Content-Length'));
     if (!(len > 0) || len > MAX_PART) return fail(413, 'part too large');
+    // Only parts of an upload we started, and never more parts than the declared size needs.
+    const declared = await ledger(env).reserved(key);
+    if (!declared || n > Math.ceil(declared / PART_SIZE)) return fail(400, 'bad part');
     const mp = env.BUCKET.resumeMultipartUpload(key, url.searchParams.get('uploadId') || '');
-    const part = await mp.uploadPart(n, request.body);
+    let body = request.body;
+    if (n === 1) {
+      const buf = await request.arrayBuffer();
+      if (!looksRight(extOf(key), new Uint8Array(buf.slice(0, 16)))) {
+        await ledger(env).release(key);
+        return fail(415, 'bad type');
+      }
+      body = buf;
+    }
+    const part = await mp.uploadPart(n, body);
     return json({ partNumber: part.partNumber, etag: part.etag });
   }
 
   if (path === '/upload/complete' && m === 'POST') {
     const body = await request.json().catch(() => ({}));
     const { key, uploadId, parts, kind } = body;
-    if (!String(key).startsWith(prefix) || !CAPS[kind] || !Array.isArray(parts) || parts.length > MAX_PARTS) return fail(400, 'bad request');
+    if (!CAPS[kind] || !String(key).startsWith(`${prefix}${kind}.`) || !Array.isArray(parts) || parts.length > MAX_PARTS) return fail(400, 'bad request');
     const mp = env.BUCKET.resumeMultipartUpload(key, uploadId);
     const obj = await mp.complete(parts.map((p) => ({ partNumber: p.partNumber, etag: p.etag })));
     if (obj.size > CAPS[kind] || !(await ledger(env).finalize(key, obj.size))) {
@@ -215,7 +254,7 @@ async function handle(request, env) {
     const f = body.fields;
     if (f.website) return json({ ok: true }); // honeypot: pretend success
     if (!(await ledger(env).hit(`sub.${await ipKey(env, request)}`, 3, 3600000))) return fail(429, 'slow');
-    const clean = (v, n) => String(v ?? '').trim().slice(0, n);
+    const clean = (v, n) => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, n);
     const data = {
       id, received: new Date().toISOString(), lang: f.lang === 'es' ? 'es' : 'en',
       first_name: clean(f.first_name, 60), last_name: clean(f.last_name, 80),
@@ -226,8 +265,11 @@ async function handle(request, env) {
     if (!data.first_name || !data.last_name || !data.phone || !/^\S+@\S+\.\S+$/.test(data.email)) return fail(400, 'missing fields');
 
     const stored = [];
+    if (body.files.length > 3) return fail(400, 'too many files');
+    const seen = new Set();
     for (const file of body.files) {
-      if (!String(file.key).startsWith(prefix) || !CAPS[file.kind]) return fail(400, 'bad file');
+      if (!CAPS[file.kind] || seen.has(file.kind) || !String(file.key).startsWith(`${prefix}${file.kind}.`)) return fail(400, 'bad file');
+      seen.add(file.kind);
       const head = await env.BUCKET.head(file.key);
       if (!head) return fail(400, 'file missing');
       stored.push({ kind: file.kind, key: file.key, name: clean(file.name, 120), size: head.size });
