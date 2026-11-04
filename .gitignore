@@ -26,3 +26,6 @@ northern-pines-website-build-prompt.md
 
 # Cached Census boundary download (tools/make-service-map.py --keep)
 /build/
+
+# VSCode IDE 
+.vscode/

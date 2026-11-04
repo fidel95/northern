@@ -8,13 +8,13 @@
    no hex values, and softer shades are color-mix()es of two tokens. */
 
 /* ---------- Page hero ----------
-   A shorter version of the home hero: the fog-pines photo under the
+   A shorter version of the home hero: the full-pines photo under the
    scrim, cream type, the eyebrow above a Cinzel headline. */
 .page-hero {
   position: relative; isolation: isolate; overflow: hidden;
   color: var(--on-pine); background-color: var(--pine);
-  background-image: url('/design-system/images/fog-pines.jpg');
-  background-image: image-set(url('/assets/brand/fog-pines.avif') type('image/avif'), url('/design-system/images/fog-pines.jpg') type('image/jpeg'));
+  background-image: url('/design-system/images/full-pines.jpg');
+  background-image: image-set(url('/assets/brand/full-pines.avif') type('image/avif'), url('/design-system/images/full-pines.jpg') type('image/jpeg'));
   background-size: cover; background-position: center 30%;
   padding-block: var(--space-16) calc(var(--space-16) + var(--space-8));
 }
@@ -110,8 +110,8 @@ p.section-sub a { color: var(--lichen-text); }
    scrim, the form in a card on top. */
 .cta-split {
   position: relative; isolation: isolate; color: var(--on-pine); background-color: var(--pine);
-  background-image: url('/design-system/images/fog-pines.jpg');
-  background-image: image-set(url('/assets/brand/fog-pines.avif') type('image/avif'), url('/design-system/images/fog-pines.jpg') type('image/jpeg'));
+  background-image: url('/design-system/images/full-pines.jpg');
+  background-image: image-set(url('/assets/brand/full-pines.avif') type('image/avif'), url('/design-system/images/full-pines.jpg') type('image/jpeg'));
   background-size: cover; background-position: center 70%;
 }
 .cta-split::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--scrim-photo); }

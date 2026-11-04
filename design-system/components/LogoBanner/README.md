@@ -6,4 +6,4 @@ This is the brand banner: the NPCS logo (with its black square removed) centered
 - **Facebook cover, 1640×624** (`npcs-banner-facebook-1640x624.jpg`): upload it as is. The logo sits inside Facebook's mobile safe area.
 - **Link preview, 1200×630** (`npcs-banner-share-1200x630.jpg`): set it as the site's `og:image` and `twitter:image`.
 
-Consumer provides: the image URL for the crop and `alt="Northern Pines Construction Services"`. Put no text or buttons on top of it. If you need a headline or a call to action, use Hero over the fog-pines photo instead, or place the content directly below the banner on `surface-100`.
+Consumer provides: the image URL for the crop and `alt="Northern Pines Construction Services"`. Put no text or buttons on top of it. If you need a headline or a call to action, use Hero over the full-pines photo instead, or place the content directly below the banner on `surface-100`.

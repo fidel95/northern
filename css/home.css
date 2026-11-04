@@ -1,7 +1,7 @@
 /* Home page. Loads after /css/site.css; every value is a design-system
    token or a mix of two. */
 
-/* ---------- 1. Hero (design system Hero on the fog-pines photo) ---------- */
+/* ---------- 1. Hero (design system Hero on the full-pines photo) ---------- */
 .hero.np-hero {
   padding: var(--space-24) 0 calc(var(--space-24) + var(--space-12));
   align-items: stretch;

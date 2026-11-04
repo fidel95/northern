@@ -18,7 +18,7 @@ Northern Pines Construction Services (NPCS) builds roofs, windows, doors, siding
 - `lichen` is the only accent fill: one primary button per view, with text in `on-lichen`. Links, eyebrows and prices use `lichen-text`. Don't use lichen for large backgrounds.
 - `mist` is fog and is only decorative: bands, placeholder media, illustration fills. Never use it for text.
 - Status colors always come with a word. `status-success` is rain blue and `status-danger` is rust orange, so the two never depend on telling red from green.
-- Any section on the fog-pines photo or on `pine` gets `data-theme="dark"`, so the accent and the focus ring resolve to their forest values even in the light theme.
+- Any section on the full-pines photo or on `pine` gets `data-theme="dark"`, so the accent and the focus ring resolve to their forest values even in the light theme.
 
 ## Type
 
@@ -38,7 +38,7 @@ Northern Pines Construction Services (NPCS) builds roofs, windows, doors, siding
 
 ## Imagery
 
-- The hero photo is the fog-pines photo (Photography group). Put it behind `.np-photo`, which adds `scrim-photo` so cream text stays legible. Keep the trees in the lower half and put text in the foggy top.
+- The hero photo is the full-pines photo (Photography group). Put it behind `.np-photo`, which adds `scrim-photo` so cream text stays legible. Keep the trees in the lower half and put text in the foggy top.
 - Use real NPCS job photos for projects, before/afters and services. Prefer overcast light and natural color, with no heavy filters. Before/after pairs sit side by side, with a 2px `lichen` divider.
 - Don't use stock photos of smiling contractors, or illustrations of tools.
 
