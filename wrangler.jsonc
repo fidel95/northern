@@ -1,12 +1,27 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "northern",
+  "main": "worker/index.js",
   "compatibility_date": "2026-08-15",
   "observability": {
     "enabled": true
   },
+  // Private bucket for giveaway uploads (created with: wrangler r2 bucket create giveaway-entries).
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "giveaway-entries" }],
+  // Global counter that enforces the storage / entry caps.
+  "durable_objects": { "bindings": [{ "name": "LEDGER", "class_name": "Ledger" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Ledger"] }],
+  "vars": {
+    // Kill switch: set to "false" in the dashboard to close the giveaway instantly.
+    "GIVEAWAY_OPEN": "true",
+    "NOTIFY_TO": "sales@npconstructionservices.com",
+    "MAIL_FROM": "Northern Pines Giveaway <giveaway@npconstructionservices.com>",
+    "SITE_ORIGIN": "https://npconstructionservices.com"
+  },
   "assets": {
     "directory": ".",
+    // Only the giveaway API runs the Worker; everything else stays static.
+    "run_worker_first": ["/api/*"],
     // Serve the branded /404.html for unknown paths instead of Cloudflare's
     // generic error page.
     "not_found_handling": "404-page"

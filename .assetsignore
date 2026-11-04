@@ -28,6 +28,9 @@ tools
 # Client contracts are internal documents, never published.
 contracts
 
+# Worker source (runs server-side, never served as a static file).
+worker
+
 # Nothing below is part of the site.
 .DS_Store
 .claude

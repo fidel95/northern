@@ -34,6 +34,11 @@
   .hero__links .np-tile__label { text-align: left; }
   .hero__links .np-tile__arrow { display: none; }
 }
+/* The services introduction (js/home-intro.js): the headline's last word
+   moves on its own, and the tile it names lights up. */
+.hero .roll, .hero .roll__word { display: inline-block; }
+.hero__links .np-tile { transition: background-color 160ms ease-out, border-color 160ms ease-out; }
+.hero__links .np-tile.is-lit { background: var(--pine); border-color: var(--lichen-text); }
 
 /* ---------- 2. Trust band ---------- */
 .trust { background: var(--surface-000); padding-block: var(--space-8) var(--space-12); }
@@ -87,7 +92,7 @@
   transition: border-color 160ms ease-out, color 160ms ease-out;
 }
 .anatomy__tag::before { content: ""; width: 6px; height: 6px; border-radius: var(--radius-full); background: currentColor; }
-.anatomy__tag:hover, .anatomy__tag:focus-visible { border-color: var(--lichen-text); color: var(--lichen-text); }
+.anatomy__tag:hover, .anatomy__tag:focus-visible, .anatomy__tag.is-lit { border-color: var(--lichen-text); color: var(--lichen-text); }
 .anatomy:has([data-part="roof"]:is(:hover, :focus-visible)) { --hl-roof: 1; }
 .anatomy:has([data-part="gutter"]:is(:hover, :focus-visible)) { --hl-gutter: 1; }
 .anatomy:has([data-part="siding"]:is(:hover, :focus-visible)) { --hl-siding: 1; }

@@ -1,0 +1,39 @@
+/* Giveaway entry form. Large type and touch targets on purpose: many entrants
+   are older and on phones. */
+.gw-lang { display: inline-flex; gap: 0; border: 1px solid var(--on-pine); border-radius: var(--radius-full); overflow: hidden; margin-bottom: var(--space-4); }
+.gw-lang__btn { font: inherit; font-size: 16px; font-weight: 600; padding: 10px 20px; min-height: 44px; background: transparent; color: var(--on-pine); border: 0; cursor: pointer; }
+.gw-lang__btn[aria-pressed="true"] { background: var(--on-pine); color: var(--pine); }
+
+.gw-form { display: grid; gap: var(--space-6); font-size: 18px; line-height: 28px; }
+.gw-card { border: 1px solid var(--line); border-radius: var(--radius-lg); padding: var(--space-6); margin: 0; min-width: 0; display: grid; gap: var(--space-4); background: var(--surface-100); }
+.gw-card__title { font-family: var(--font-display); font-weight: 600; font-size: 24px; line-height: 30px; padding: 0 var(--space-2); }
+.gw-req { color: var(--status-danger); }
+.gw-help { margin: 0; color: var(--ink-muted); font-size: 17px; line-height: 27px; }
+.gw-fine { font-size: 15px; line-height: 23px; }
+.gw-list { margin: 0; padding-left: 1.25em; display: grid; gap: var(--space-2); }
+.gw-form .np-input { font-size: 18px; min-height: 52px; }
+
+.gw-check { display: grid; grid-template-columns: 32px 1fr; gap: var(--space-3); align-items: start; cursor: pointer; padding: var(--space-2) 0; }
+.gw-check input { width: 28px; height: 28px; margin: 2px 0 0; accent-color: var(--pine); }
+
+.gw-file { display: grid; gap: var(--space-2); justify-items: start; }
+.gw-file__input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.gw-file__input:focus-visible + .gw-file__pick { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
+.gw-file__pick { cursor: pointer; }
+.gw-file__name { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.gw-file__hint { margin: 0; font-size: 15px; color: var(--ink-muted); }
+.gw-file__err { margin: 0; color: var(--status-danger); font-weight: 600; min-height: 0; }
+.gw-file__err:empty { display: none; }
+.gw-bar { width: 100%; height: 16px; border-radius: var(--radius-full); background: var(--surface-300); overflow: hidden; }
+.gw-bar__fill { height: 100%; width: 0; background: var(--pine); transition: width .2s; }
+
+.gw-status { margin: 0; font-weight: 600; min-height: 1.5em; }
+.gw-status.is-error { color: var(--status-danger); }
+.gw-submit[disabled] { opacity: .6; cursor: progress; }
+.gw-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.gw-done { border: 2px solid var(--status-success); border-radius: var(--radius-lg); padding: var(--space-8); }
+.gw-done h2 { margin-top: 0; }
+
+@media (max-width: 640px) {
+  .gw-card { padding: var(--space-4); }
+}
