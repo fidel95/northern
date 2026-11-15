@@ -15,6 +15,7 @@ bun.lockb
 .gitattributes
 .editorconfig
 README.md
+TODO.md
 
 # Source and documentation for the visualizer's demo-home models — the .glb
 # files they produce ship, the tools that produce them don't.
@@ -30,6 +31,16 @@ contracts
 
 # Worker source (runs server-side, never served as a static file).
 worker
+
+# Local secrets for `wrangler dev`. Git already ignores this file, but a
+# deploy run from this folder would otherwise publish it as a web page.
+.dev.vars
+.env
+.env.*
+
+# Local preview of the home-page intro animations, not a real page.
+intro-preview.html
+intro-preview.js
 
 # Nothing below is part of the site.
 .DS_Store

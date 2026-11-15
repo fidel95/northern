@@ -11,6 +11,9 @@
   // Global counter that enforces the storage / entry caps.
   "durable_objects": { "bindings": [{ "name": "LEDGER", "class_name": "Ledger" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Ledger"] }],
+  // Every 6 hours the Worker deletes uploads that were never submitted
+  // (sweepOrphans in worker/index.js), so they stop using up the storage cap.
+  "triggers": { "crons": ["17 */6 * * *"] },
   "vars": {
     // Kill switch: set to "false" in the dashboard to close the giveaway instantly.
     "GIVEAWAY_OPEN": "true",

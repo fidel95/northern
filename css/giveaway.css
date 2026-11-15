@@ -6,7 +6,10 @@
 
 .gw-form { display: grid; gap: var(--space-6); font-size: 18px; line-height: 28px; }
 .gw-card { border: 1px solid var(--line); border-radius: var(--radius-lg); padding: var(--space-6); margin: 0; min-width: 0; display: grid; gap: var(--space-4); background: var(--surface-100); }
-.gw-card__title { font-family: var(--font-display); font-weight: 600; font-size: 24px; line-height: 30px; padding: 0 var(--space-2); }
+/* A <legend> normally sits ON the card's top border, which looks broken when a
+   long title wraps to two or three lines (the border cuts through the text).
+   Floating it makes the browser lay it out as ordinary content INSIDE the card. */
+.gw-card__title { float: left; width: 100%; font-family: var(--font-display); font-weight: 600; font-size: 24px; line-height: 30px; padding: 0; }
 .gw-req { color: var(--status-danger); }
 .gw-help { margin: 0; color: var(--ink-muted); font-size: 17px; line-height: 27px; }
 .gw-fine { font-size: 15px; line-height: 23px; }

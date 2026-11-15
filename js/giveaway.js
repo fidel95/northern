@@ -55,6 +55,8 @@
       sending: 'Sending your entry…', fail: 'Something went wrong. Please try again, or call (765) 376-1197.',
       fixForm: 'Please fix the items marked above.', video: 'your video', ownership: 'your proof of ownership', income: 'your proof of income',
       human: 'Please complete the check below.',
+      badPhone: 'Please enter a phone number with its area code.',
+      noCheck: 'The security check could not load. Please turn off any ad blocker for this page and reload, or call (765) 376-1197.',
       slow: 'Too many attempts from this connection. Please wait a while and try again, or call (765) 376-1197.',
       duplicate: 'We already have an entry with this email or phone number. Each household can enter once. Questions? Call (765) 376-1197.',
       closed: 'Entries are now closed. Thank you for your interest!',
@@ -67,6 +69,8 @@
       sending: 'Enviando su participación…', fail: 'Algo salió mal. Inténtelo de nuevo o llame al (765) 376-1197.',
       fixForm: 'Por favor corrija los puntos marcados arriba.', video: 'su video', ownership: 'su comprobante de propiedad', income: 'su comprobante de ingresos',
       human: 'Por favor complete la verificación de abajo.',
+      badPhone: 'Por favor escriba un número de teléfono con su código de área.',
+      noCheck: 'No se pudo cargar la verificación de seguridad. Desactive cualquier bloqueador de anuncios en esta página y vuelva a cargarla, o llame al (765) 376-1197.',
       slow: 'Demasiados intentos desde esta conexión. Espere un rato e inténtelo de nuevo, o llame al (765) 376-1197.',
       duplicate: 'Ya tenemos una participación con este correo o teléfono. Cada hogar puede participar una vez. ¿Preguntas? Llame al (765) 376-1197.',
       closed: 'La participación ya está cerrada. ¡Gracias por su interés!',
@@ -111,6 +115,10 @@
 
   /* ---------- file pickers ---------- */
   var files = { ownership: null, income: null, video: null };
+  // Uploads that already finished, kept so that pressing Submit again after an
+  // error does not send a 300 MB video a second time.
+  var done = {};
+  var session = null; // { id, token, until } from /session, reused until it nears expiry
   function ext(name) { var m = /\.([^.]+)$/.exec(name || ''); return m ? m[1].toLowerCase() : ''; }
   function box(kind) { return form.querySelector('[data-file="' + kind + '"]'); }
   function showErr(kind, msg) { box(kind).querySelector('.gw-file__err').textContent = msg || ''; }
@@ -123,11 +131,15 @@
       var f = input.files && input.files[0];
       files[kind] = null; showErr(kind, '');
       if (!f) { delete label.dataset.has; label.innerHTML = lang === 'es' ? ES.nofile : 'No file chosen'; return; }
-      var okExt = (kind === 'video' ? VID_EXT : DOC_EXT).indexOf(ext(f.name)) >= 0 ||
-        (kind === 'video' ? /^video\//.test(f.type) : /^image\//.test(f.type));
+      // The server accepts a file by its extension only. This used to also
+      // let through anything the phone called an image or a video (a .gif or
+      // .avi, say), which the server then rejected after the whole upload
+      // with a vague "something went wrong". Say no here, right away.
+      var okExt = (kind === 'video' ? VID_EXT : DOC_EXT).indexOf(ext(f.name)) >= 0;
       if (!okExt) { showErr(kind, t('badType')); input.value = ''; return; }
       if (f.size > MAX[kind] * 1024 * 1024) { showErr(kind, t('tooBig', { n: MAX[kind] })); input.value = ''; return; }
       files[kind] = f;
+      delete done[kind]; // a different file: forget any earlier upload of this slot
       label.dataset.has = '1';
       label.textContent = f.name + ' (' + (f.size / 1048576).toFixed(1) + ' MB)';
     });
@@ -135,14 +147,30 @@
 
   /* ---------- Turnstile (optional until a sitekey is configured) ---------- */
   var tsToken = '';
+  var tsWidget = null;
+  var tsFailed = false; // the script was blocked (ad blocker, network)
   if (TURNSTILE_SITEKEY) {
     var s = document.createElement('script');
     s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     s.async = true; s.defer = true;
     s.onload = function () {
-      window.turnstile.render('#gw-turnstile', { sitekey: TURNSTILE_SITEKEY, callback: function (tok) { tsToken = tok; } });
+      tsWidget = window.turnstile.render('#gw-turnstile', {
+        sitekey: TURNSTILE_SITEKEY,
+        callback: function (tok) { tsToken = tok; },
+        // A token only lives a few minutes; forget it when it dies so we never
+        // send a stale one.
+        'expired-callback': function () { tsToken = ''; },
+        'error-callback': function () { tsToken = ''; }
+      });
     };
+    s.onerror = function () { tsFailed = true; };
     document.head.appendChild(s);
+  }
+  // Each token works exactly once. After the server has seen it, ask the
+  // widget for a fresh one so a second attempt is not doomed to fail.
+  function resetTurnstile() {
+    tsToken = '';
+    if (tsWidget !== null && window.turnstile) { try { window.turnstile.reset(tsWidget); } catch (e) {} }
   }
 
   /* ---------- API helpers ---------- */
@@ -159,14 +187,22 @@
       var x = new XMLHttpRequest();
       x.open('PUT', url);
       x.upload.onprogress = function (e) { if (e.lengthComputable) onProgress(e.loaded); };
-      x.onload = function () { x.status < 300 ? resolve(JSON.parse(x.responseText)) : reject(new Error('HTTP ' + x.status)); };
+      x.onload = function () {
+        if (x.status < 300) { resolve(JSON.parse(x.responseText)); return; }
+        // Keep the server's reason (e.g. "bad type") so the form can explain it.
+        var e = new Error('HTTP ' + x.status); e.status = x.status;
+        try { e.code = JSON.parse(x.responseText).error; } catch (ignore) {}
+        reject(e);
+      };
       x.onerror = function () { reject(new Error('network')); };
       x.send(body);
     });
   }
   function retry(fn, n) {
     return fn().catch(function (e) {
-      if (n <= 0) throw e;
+      // Retrying helps with a dropped connection or a busy server. It cannot
+      // help when the server has refused the request (a 4xx answer).
+      if (n <= 0 || (e.status >= 400 && e.status < 500 && e.status !== 429)) throw e;
       return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return retry(fn, n - 1); });
     });
   }
@@ -204,18 +240,28 @@
   var btn = document.getElementById('gw-submit');
   function status(msg, isErr) { statusEl.textContent = msg || ''; statusEl.classList.toggle('is-error', !!isErr); }
 
+  // True while we hold a session with comfortably more than an upload's worth
+  // of time left on it.
+  function liveSession() { return !!session && session.until - Date.now() > 30 * 60000; }
+
   function validate() {
     var bad = null;
+    var badPhone = false;
     ['gw-first', 'gw-last', 'gw-phone', 'gw-email'].forEach(function (id) {
       var el = document.getElementById(id);
       var ok = el.value.trim() && (id !== 'gw-email' || /^\S+@\S+\.\S+$/.test(el.value.trim()));
+      // A phone number needs at least 10 digits (area code + number); the
+      // server checks the same thing.
+      if (id === 'gw-phone' && el.value.replace(/\D/g, '').length < 10) { ok = false; badPhone = true; }
       el.setAttribute('aria-invalid', ok ? 'false' : 'true');
       if (!ok && !bad) bad = el;
     });
     if (!files.ownership) { showErr('ownership', t('needFile')); bad = bad || box('ownership').querySelector('.gw-file__pick'); }
     if (!files.video) { showErr('video', t('needVideo')); bad = bad || box('video').querySelector('.gw-file__pick'); }
-    if (TURNSTILE_SITEKEY && !tsToken) { status(t('human'), true); return false; }
-    if (bad) { status(t('fixForm'), true); bad.scrollIntoView({ block: 'center' }); if (bad.focus) bad.focus(); return false; }
+    // Field problems first: they are what the person can fix right now.
+    if (bad) { status(t(badPhone && bad.id === 'gw-phone' ? 'badPhone' : 'fixForm'), true); bad.scrollIntoView({ block: 'center' }); if (bad.focus) bad.focus(); return false; }
+    // A session we already hold has passed the check; no new token needed.
+    if (TURNSTILE_SITEKEY && !tsToken && !liveSession()) { status(t(tsFailed ? 'noCheck' : 'human'), true); return false; }
     return true;
   }
 
@@ -236,21 +282,32 @@
       outside: form.outside.value.trim(), website: form.website.value, lang: lang
     };
 
-    var session;
     var uploaded = [];
-    api('/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ turnstile: tsToken }) })
-      .then(function (s) {
-        session = s;
+    var failedKind = null; // which file was uploading when something broke
+    // Reuse the session from an earlier attempt when there is one. A new
+    // session means a new folder on the server, so earlier uploads are dropped.
+    var getSession = liveSession() ? Promise.resolve(session) :
+      api('/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ turnstile: tsToken }) })
+        .then(function (s) {
+          resetTurnstile(); // that token is now spent
+          done = {};
+          session = { id: s.id, token: s.token, until: Number(String(s.token).split('.')[1]) || 0 };
+          return session;
+        }, function (err) { resetTurnstile(); throw err; });
+    getSession
+      .then(function () {
         var order = ['ownership', 'income', 'video'].filter(function (k) { return files[k]; });
         var chain = Promise.resolve();
         order.forEach(function (kind) {
           chain = chain.then(function () {
+            if (done[kind]) { uploaded.push(done[kind]); return; } // already sent last time
             var bar = box(kind).querySelector('.gw-bar'); bar.hidden = false;
             var fill = bar.querySelector('.gw-bar__fill');
+            failedKind = kind;
             return uploadFile(session, kind, files[kind], function (p) {
               fill.style.width = p + '%';
               status(t('uploading', { what: t(kind), p: p }));
-            }).then(function (r) { uploaded.push(r); });
+            }).then(function (r) { done[kind] = r; uploaded.push(r); failedKind = null; });
           });
         });
         return chain;
@@ -271,8 +328,16 @@
       .catch(function (err) {
         window.removeEventListener('beforeunload', window_);
         btn.disabled = false;
-        var known = err && { closed: 1, full: 1, slow: 1, duplicate: 1 }[err.code];
-        status(known ? t(err.code) : t('fail'), true);
+        // An expired session cannot be reused; start clean next time.
+        if (err && err.status === 401) { session = null; done = {}; }
+        // Turn the server's short error codes into a sentence the person can act on.
+        var code = err && err.code;
+        var key = { closed: 'closed', full: 'full', slow: 'slow', duplicate: 'duplicate', 'challenge failed': 'human' }[code];
+        if ((code === 'bad type' || code === 'too large') && failedKind) {
+          showErr(failedKind, code === 'bad type' ? t('badType') : t('tooBig', { n: MAX[failedKind] }));
+          key = 'fixForm';
+        }
+        status(t(key || 'fail'), true);
       });
   });
 })();
