@@ -39,6 +39,10 @@ export class Ledger extends DurableObject {
     this.sql.exec('CREATE TABLE IF NOT EXISTS rl (k TEXT, ts INTEGER)');
     this.sql.exec('CREATE INDEX IF NOT EXISTS rl_k ON rl (k, ts)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS ids (k TEXT PRIMARY KEY)');
+    // `up` holds the R2 upload id that owns a reservation. The table already
+    // exists in production without it, so add the column once; SQLite throws
+    // "duplicate column" on every later start, which is the expected case.
+    try { this.sql.exec('ALTER TABLE res ADD COLUMN up TEXT'); } catch (e) { /* already added */ }
   }
   /* Sliding-window limiter: allow at most `limit` hits per `windowMs` for key k. */
   hit(k, limit, windowMs) {
@@ -72,21 +76,29 @@ export class Ledger extends DurableObject {
     return r.length ? r[0].v : 0;
   }
   status() { return { used: this.used(), entries: this.entries(), full: this.used() >= CAP_BYTES || this.entries() >= MAX_ENTRIES }; }
+  /* Reserve room for one file. Returns { ok, prev } where `prev` is the upload
+     id of an earlier, unfinished attempt at the same file (if any) so the
+     caller can abort it instead of leaving its pieces in the bucket. */
   reserve(key, bytes) {
+    const old = this.sql.exec('SELECT up FROM res WHERE k = ? AND done = 0', key).toArray();
+    const prev = old.length ? old[0].up : null;
     this.sql.exec('DELETE FROM res WHERE k = ?', key);
-    if (this.used() + bytes > CAP_BYTES) return false;
+    if (this.used() + bytes > CAP_BYTES) return { ok: false, prev };
     this.sql.exec('INSERT INTO res (k, bytes, ts, done) VALUES (?, ?, ?, 0)', key, bytes, Date.now());
-    return true;
+    return { ok: true, prev };
   }
+  /* Tie the reservation to the upload R2 just opened for it. */
+  setUpload(key, up) { this.sql.exec('UPDATE res SET up = ? WHERE k = ? AND done = 0', up, key); }
   finalize(key, actual) {
     const r = this.sql.exec('SELECT bytes FROM res WHERE k = ?', key).toArray();
     if (!r.length || actual > r[0].bytes) { this.sql.exec('DELETE FROM res WHERE k = ?', key); return false; }
     this.sql.exec('UPDATE res SET bytes = ?, done = 1 WHERE k = ?', actual, key);
     return true;
   }
+  /* The open reservation for a key: its declared size and its upload id. */
   reserved(key) {
-    const r = this.sql.exec('SELECT bytes FROM res WHERE k = ? AND done = 0', key).toArray();
-    return r.length ? r[0].bytes : 0;
+    const r = this.sql.exec('SELECT bytes, up FROM res WHERE k = ? AND done = 0', key).toArray();
+    return r.length ? { bytes: r[0].bytes, up: r[0].up } : null;
   }
   release(key) { this.sql.exec('DELETE FROM res WHERE k = ?', key); }
 }
@@ -96,6 +108,15 @@ const ledger = (env) => env.LEDGER.get(env.LEDGER.idFromName('giveaway'));
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 const fail = (status, error) => json({ error }, status);
+// Read a small JSON body. Our JSON requests are a few KB at most, so anything
+// claiming to be bigger is refused before it is read into memory.
+const MAX_JSON = 64 * 1024;
+async function readJson(request, fallback) {
+  if (Number(request.headers.get('Content-Length')) > MAX_JSON) return fallback;
+  const text = await request.text().catch(() => '');
+  if (text.length > MAX_JSON) return fallback;
+  try { return JSON.parse(text); } catch (e) { return fallback; }
+}
 
 const enc = new TextEncoder();
 async function hmac(secret, msg) {
@@ -153,6 +174,14 @@ async function handle(request, env) {
   const path = url.pathname.replace(/^\/api\/giveaway/, '');
   const m = request.method;
 
+  // Every token and download link is signed with SESSION_SECRET. If the secret
+  // were ever missing, the signing key would silently become the text
+  // "undefined" and anyone could forge links, so stop here instead.
+  if (typeof env.SESSION_SECRET !== 'string' || !env.SESSION_SECRET) {
+    console.error('SESSION_SECRET is not set');
+    return fail(503, 'closed');
+  }
+
   if (path === '/file' && m === 'GET') {
     const key = url.searchParams.get('key') || '';
     const exp = url.searchParams.get('exp') || '';
@@ -178,7 +207,7 @@ async function handle(request, env) {
     if ((await ledger(env).status()).full) return fail(503, 'full');
     if (!(await ledger(env).hit(`sess.${await ipKey(env, request)}`, 5, 3600000))) return fail(429, 'slow');
     if (env.TURNSTILE_SECRET) {
-      const body = await request.json().catch(() => ({}));
+      const body = await readJson(request, {});
       const fd = new FormData();
       fd.set('secret', env.TURNSTILE_SECRET);
       fd.set('response', body.turnstile || '');
@@ -205,10 +234,15 @@ async function handle(request, env) {
     if (!(size > 0) || size > CAPS[kind]) return fail(413, 'too large');
     if (!(kind === 'video' ? VID_EXT : DOC_EXT).includes(extOf(name))) return fail(415, 'bad type');
     const key = `${prefix}${kind}.${extOf(name)}`;
-    if (!(await ledger(env).reserve(key, size))) return fail(503, 'full');
+    const slot = await ledger(env).reserve(key, size);
+    // Restarting a file used to leave the earlier attempt's pieces in the
+    // bucket, uncounted. Abort it so only one attempt per file ever holds space.
+    if (slot.prev) await env.BUCKET.resumeMultipartUpload(key, slot.prev).abort().catch(() => {});
+    if (!slot.ok) return fail(503, 'full');
     const mp = await env.BUCKET.createMultipartUpload(key, {
       httpMetadata: { contentType: MIME[extOf(name)] || 'application/octet-stream' },
     });
+    await ledger(env).setUpload(key, mp.uploadId);
     return json({ key, uploadId: mp.uploadId });
   }
 
@@ -219,13 +253,16 @@ async function handle(request, env) {
     const len = Number(request.headers.get('Content-Length'));
     if (!(len > 0) || len > MAX_PART) return fail(413, 'part too large');
     // Only parts of an upload we started, and never more parts than the declared size needs.
-    const declared = await ledger(env).reserved(key);
-    if (!declared || n > Math.ceil(declared / PART_SIZE)) return fail(400, 'bad part');
-    const mp = env.BUCKET.resumeMultipartUpload(key, url.searchParams.get('uploadId') || '');
+    // ...and only into the one upload the ledger is tracking for this file.
+    const slot = await ledger(env).reserved(key);
+    const uploadId = url.searchParams.get('uploadId') || '';
+    if (!slot || slot.up !== uploadId || n > Math.ceil(slot.bytes / PART_SIZE)) return fail(400, 'bad part');
+    const mp = env.BUCKET.resumeMultipartUpload(key, uploadId);
     let body = request.body;
     if (n === 1) {
       const buf = await request.arrayBuffer();
       if (!looksRight(extOf(key), new Uint8Array(buf.slice(0, 16)))) {
+        await mp.abort().catch(() => {});
         await ledger(env).release(key);
         return fail(415, 'bad type');
       }
@@ -236,9 +273,11 @@ async function handle(request, env) {
   }
 
   if (path === '/upload/complete' && m === 'POST') {
-    const body = await request.json().catch(() => ({}));
+    const body = await readJson(request, {});
     const { key, uploadId, parts, kind } = body;
     if (!CAPS[kind] || !String(key).startsWith(`${prefix}${kind}.`) || !Array.isArray(parts) || parts.length > MAX_PARTS) return fail(400, 'bad request');
+    const slot = await ledger(env).reserved(key);
+    if (!slot || slot.up !== uploadId) return fail(400, 'bad request');
     const mp = env.BUCKET.resumeMultipartUpload(key, uploadId);
     const obj = await mp.complete(parts.map((p) => ({ partNumber: p.partNumber, etag: p.etag })));
     if (obj.size > CAPS[kind] || !(await ledger(env).finalize(key, obj.size))) {
@@ -249,7 +288,7 @@ async function handle(request, env) {
   }
 
   if (path === '/submit' && m === 'POST') {
-    const body = await request.json().catch(() => null);
+    const body = await readJson(request, null);
     if (!body || !body.fields || !Array.isArray(body.files)) return fail(400, 'bad request');
     const f = body.fields;
     if (f.website) return json({ ok: true }); // honeypot: pretend success
@@ -262,7 +301,12 @@ async function handle(request, env) {
       elig_owner: !!f.elig_owner, elig_county: !!f.elig_county, elig_income: !!f.elig_income, elig_media: !!f.elig_media,
       outside: clean(f.outside, 600),
     };
-    if (!data.first_name || !data.last_name || !data.phone || !/^\S+@\S+\.\S+$/.test(data.email)) return fail(400, 'missing fields');
+    // The phone's digits are one of the "one entry per household" keys below,
+    // so it has to actually contain a phone number. The email also becomes the
+    // Reply-To of our notification, so it must be exactly one plain address.
+    const digits = data.phone.replace(/\D/g, '');
+    if (!data.first_name || !data.last_name || digits.length < 10 || digits.length > 15 ||
+        !/^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;"]+$/.test(data.email)) return fail(400, 'missing fields');
 
     const stored = [];
     if (body.files.length > 3) return fail(400, 'too many files');
@@ -275,7 +319,7 @@ async function handle(request, env) {
       stored.push({ kind: file.kind, key: file.key, name: clean(file.name, 120), size: head.size });
     }
     if (!stored.some((s) => s.kind === 'ownership') || !stored.some((s) => s.kind === 'video')) return fail(400, 'missing files');
-    const ids = [`s:${id}`, `e:${data.email.toLowerCase()}`, `p:${data.phone.replace(/\D/g, '').slice(-10)}`];
+    const ids = [`s:${id}`, `e:${data.email.toLowerCase()}`, `p:${digits.slice(-10)}`];
     const verdict = await ledger(env).commit(ids);
     if (verdict === 'full') return fail(503, 'full');
     if (verdict === 'duplicate') return fail(409, 'duplicate');
@@ -329,7 +373,46 @@ ${d.outside ? `<h3>Outside Montgomery County</h3><p>${esc(d.outside).replace(/\n
   if (!r.ok) throw new Error(`resend ${r.status} ${await r.text()}`);
 }
 
+/* Housekeeping, run on a timer (see "triggers" in wrangler.jsonc).
+
+   Someone can upload files and then never press Submit. Those files used to
+   stay in the bucket forever and keep counting against the storage cap, so
+   enough abandoned (or malicious) uploads would close the giveaway for
+   everyone. An upload session only lasts SESSION_HOURS, so a folder that is
+   older than that and still has no submission.json can never become an entry:
+   delete it and give its space back. Real entries always have submission.json
+   and are never touched. */
+const ORPHAN_AFTER_MS = (SESSION_HOURS + 2) * 3600000;
+async function sweepOrphans(env) {
+  const folders = new Map(); // session id -> { keys, newest, submitted }
+  let cursor;
+  do {
+    const page = await env.BUCKET.list({ prefix: 'giveaway/', cursor, limit: 1000 });
+    for (const o of page.objects) {
+      const sid = o.key.split('/')[1];
+      const f = folders.get(sid) || { keys: [], newest: 0, submitted: false };
+      f.keys.push(o.key);
+      f.newest = Math.max(f.newest, o.uploaded.getTime());
+      if (o.key.endsWith('/submission.json')) f.submitted = true;
+      folders.set(sid, f);
+    }
+    cursor = page.truncated ? page.cursor : undefined;
+  } while (cursor);
+
+  let removed = 0;
+  for (const f of folders.values()) {
+    if (f.submitted || Date.now() - f.newest < ORPHAN_AFTER_MS) continue;
+    await env.BUCKET.delete(f.keys);
+    for (const k of f.keys) await ledger(env).release(k);
+    removed += f.keys.length;
+  }
+  if (removed) console.log('swept abandoned uploads', removed);
+}
+
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(sweepOrphans(env));
+  },
   async fetch(request, env) {
     try {
       return await handle(request, env);
